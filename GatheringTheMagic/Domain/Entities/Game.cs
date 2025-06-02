@@ -39,7 +39,7 @@ public class Game
     public TurnPhase CurrentPhase { get; private set; }
 
     public Game()
-    {        
+    {
         // Build initial state
         Reset();
     }
@@ -68,14 +68,20 @@ public class Game
         _landPlaysThisTurn[Owner.Opponent] = 0;
 
         // 4) Opening hands: each draws 7
-        for (int i = 0; i < 7; i++)
-            DrawCard(Owner.Player);
-        for (int i = 0; i < 7; i++)
-            DrawCard(Owner.Opponent);
+        DrawOpeningHand(Owner.Player);
+        DrawOpeningHand(Owner.Opponent);
 
         // 5) Set starting player and phase
         ActivePlayer = Owner.Player;
         CurrentPhase = TurnPhase.Untap;
+    }
+
+    public void DrawOpeningHand(Owner owner)
+    {
+        for (int i = 0; i < 7; i++)
+            DrawCard(owner);
+
+        return;
     }
 
     // Draw for whoever has priority
