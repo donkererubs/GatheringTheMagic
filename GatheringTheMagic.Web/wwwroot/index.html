@@ -1,19 +1,318 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8" />
-    <title>Gathering The Magic</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>GatheringTheMagic – Click Deck to Draw</title>
+    <style>
+         /* Reset margins/padding and force full-height */
+         html, body {
+             margin: 0;
+             padding: 0;
+             height: 100%;
+         }
+
+         body {
+             display: flex;
+             flex-direction: column;
+             height: 100vh;
+             font-family: sans-serif;
+         }
+
+         /* ------------------------------
+        Opponent zone (top 35%)
+        ------------------------------ */
+         .opponent-zone {
+             flex: 0 0 35%;
+             background-color: #F08080; /* light coral */
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             position: relative;
+         }
+
+             .opponent-zone button {
+                 padding: 0.75rem 1.5rem;
+                 font-size: 1.25rem;
+                 cursor: pointer;
+                 border: none;
+                 border-radius: 4px;
+                 background-color: #ffffff;
+                 color: #F08080;
+             }
+
+                 .opponent-zone button:hover {
+                     background-color: #f0f0f0;
+                 }
+
+         /* ------------------------------
+        Phase tracker strip (10%, min-height: 20px)
+        ------------------------------ */
+         .phase-zone {
+             flex: 0 0 10%;
+             min-height: 20px;
+             background-color: #EEE8AA; /* pale goldenrod */
+             display: flex;
+             align-items: center;
+             justify-content: center;
+         }
+
+             .phase-zone button {
+                 padding: 0.5rem 1rem;
+                 font-size: 1rem;
+                 cursor: pointer;
+                 border: none;
+                 border-radius: 4px;
+                 background-color: #FFFFFF;
+                 color: #8B4513; /* saddle brown */
+             }
+
+                 .phase-zone button:hover {
+                     background-color: #f5f5f5;
+                 }
+
+         /* ------------------------------
+        Player zone (bottom 55%)
+        ------------------------------ */
+         .player-zone {
+             flex: 0 0 55%;
+             display: flex;
+             background-color: #B0C4DE; /* light steel blue */
+         }
+
+         /* Left column (15% width) */
+         .left-zone {
+             flex: 0 0 15%;
+             background-color: #D3D3D3; /* light gray */
+         }
+
+         /* Middle column (70% width) with three equal rows */
+         .middle-zone {
+             flex: 0 0 70%;
+             display: flex;
+             flex-direction: column;
+         }
+
+             .middle-zone .top {
+                 flex: 1;
+                 background-color: #90EE90; /* light green */
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+             }
+
+             .middle-zone .center {
+                 flex: 1;
+                 background-color: #FFFFE0; /* light yellow */
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+             }
+
+             .middle-zone .bottom {
+                 flex: 1;
+                 background-color: #FFB6C1; /* light pink */
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+                 position: relative;
+             }
+
+         /* Right column (15% width) with two equal rows */
+         .right-zone {
+             flex: 0 0 15%;
+             display: flex;
+             flex-direction: column;
+         }
+
+             .right-zone .top {
+                 flex: 1;
+                 background-color: #FFA07A; /* light salmon */
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+                 position: relative;
+                 cursor: pointer; /* so user knows it’s clickable */
+             }
+
+             .right-zone .bottom {
+                 flex: 1;
+                 background-color: #87CEFA; /* light sky blue */
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+                 position: relative;
+             }
+
+         /* ------------------------------
+        New Inner Zones (centered)
+        ------------------------------ */
+         .hand-zone {
+             width: 80%;
+             height: 60%;
+             background-color: #FFD700; /* gold */
+             display: flex;
+             align-items: center;
+             justify-content: flex-start;
+             flex-wrap: wrap;
+             padding: 4px;
+             gap: 8px;
+             border-radius: 4px;
+             color: #000;
+         }
+
+         .deck-zone {
+             width: 80%;
+             height: 60%;
+             background-color: #8A2BE2; /* blue violet */
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             color: #fff;
+             border-radius: 4px;
+             font-size: 1rem;
+             user-select: none;
+         }
+
+         .graveyard-zone {
+             width: 80%;
+             height: 60%;
+             background-color: #2E8B57; /* sea green */
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             color: #fff;
+             border-radius: 4px;
+             font-size: 1rem;
+         }
+
+         /* Each card “pill” within hand-zone */
+         .card-pill {
+             background-color: #FFF;
+             border: 1px solid #999;
+             border-radius: 4px;
+             padding: 4px 8px;
+             font-size: 0.85rem;
+             color: #333;
+             white-space: nowrap;
+         }
+    </style>
 </head>
+
 <body>
-    <h1>Gathering The Magic</h1>
-    <button id="start">Start New Game</button>
-    <div id="status"></div>
-    <div id="controls" style="display:none;">
-        <button id="nextPhase">Next Phase</button>
-        <h2>Your Hand (<span id="handCount">0</span>)</h2>
-        <ul id="handList"></ul>
+    <!-- Opponent zone (top, 35% height) -->
+    <div class="opponent-zone">
+        <button id="startGameBtn">Start Game</button>
     </div>
-    <script src="app.js" defer></script>
+
+    <!-- Phase tracker strip (10% height, min-20px) -->
+    <div class="phase-zone">
+        <button id="nextPhaseBtn">Next Phase</button>
+    </div>
+
+    <!-- Player zone (bottom, 55% height) -->
+    <div class="player-zone">
+        <!-- Left empty column (15%) -->
+        <div class="left-zone"></div>
+
+        <!-- Middle column (70%), split into 3 rows -->
+        <div class="middle-zone">
+            <div class="top">
+                Middle Top
+            </div>
+            <div class="center">
+                Middle Center
+            </div>
+            <div class="bottom">
+                <!-- Hand Zone (centered) -->
+                <div class="hand-zone" id="handZone">
+                    <!-- Cards will be injected here via JS when game starts or draws -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column (15%), split into 2 rows -->
+        <div class="right-zone">
+            <div class="top" id="deckZone">
+                <!-- Deck count shown here; clicking this triggers a DrawCard API call -->
+            </div>
+            <div class="bottom">
+                <!-- Graveyard (static for now) -->
+                <div class="graveyard-zone">
+                    Graveyard
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // When “Start Game” is clicked:
+        document.getElementById("startGameBtn").addEventListener("click", async function () {
+            // 1) Hide the Start Game button
+            this.style.display = "none";
+
+            try {
+                // 2) Call POST /api/game to get initial deckCount + hand
+                const resp = await fetch("/api/game", { method: "POST" });
+                if (!resp.ok) {
+                    console.error("Failed to start game: HTTP " + resp.status);
+                    return;
+                }
+                const data = await resp.json(); // { deckCount, hand: [ { name, imageUrl }, ... ] }
+
+                // 3) Show deck count in the Deck zone
+                document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
+
+                // 4) Render each card in the Hand zone
+                const handZone = document.getElementById("handZone");
+                handZone.innerHTML = "";
+                data.hand.forEach(card => {
+                    const pill = document.createElement("div");
+                    pill.className = "card-pill";
+                    pill.innerText = card.name;
+                    handZone.appendChild(pill);
+                });
+            }
+            catch (err) {
+                console.error("Error calling /api/game:", err);
+            }
+        });
+
+        // “Next Phase” button - not implemented yet
+        document.getElementById("nextPhaseBtn").addEventListener("click", () => {
+            console.log("Next Phase clicked (not implemented)");
+        });
+
+        // 5) When user clicks on “Deck” area, call DrawCard and update UI
+        document.getElementById("deckZone").addEventListener("click", async () => {
+            try {
+                // Call the draw endpoint
+                const resp = await fetch("/api/game/draw", { method: "POST" });
+                if (!resp.ok) {
+                    console.error("Failed to draw card: HTTP " + resp.status);
+                    return;
+                }
+                const data = await resp.json();
+                // data = { deckCount: number, drawnCard: { name, imageUrl } | null }
+
+                // 5a) Update deck count in the Deck zone
+                document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
+
+                // 5b) If drawnCard is not null, append it to Hand zone
+                if (data.drawnCard !== null) {
+                    const handZone = document.getElementById("handZone");
+                    const pill = document.createElement("div");
+                    pill.className = "card-pill";
+                    pill.innerText = data.drawnCard.name;
+                    handZone.appendChild(pill);
+                } else {
+                    // Optionally, you could show “Deck is empty” or disable further clicks
+                    console.log("No more cards to draw.");
+                }
+            }
+            catch (err) {
+                console.error("Error calling /api/game/draw:", err);
+            }
+        });
+    </script>
 </body>
 </html>

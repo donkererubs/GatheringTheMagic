@@ -495,6 +495,190 @@ namespace GatheringTheMagic.Infrastructure.Data
             ),
 
 
+            new CardDefinition(
+                name: "Elvish Mystic",
+                manaCost: "{G}",
+                colorIdentity: CardColor.Green,
+                types: CardType.Creature,
+                supertypes: CardSupertype.None,
+                subtypes: new[] { "Elf", "Druid" },
+                rarity: CardRarity.Common,
+                text: "{T}: Add {G}.",
+                power: 1,
+                toughness: 1
+            ),
+
+            new CardDefinition(
+                name: "Goblin Guide",
+                manaCost: "{R}",
+                colorIdentity: CardColor.Red,
+                types: CardType.Creature,
+                supertypes: CardSupertype.None,
+                subtypes: new[] { "Goblin", "Scout" },
+                rarity: CardRarity.Rare,
+                text: "Haste. Whenever Goblin Guide attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand.",
+                keywords: KeywordAbility.Haste,
+                power: 2,
+                toughness: 2
+            ),
+
+            new CardDefinition(
+                name: "Thalia, Guardian of Thraben",
+                manaCost: "{1}{W}",
+                colorIdentity: CardColor.White,
+                types: CardType.Creature,
+                supertypes: CardSupertype.Legendary,
+                subtypes: new[] { "Human", "Soldier" },
+                rarity: CardRarity.Rare,
+                text: "First strike. Noncreature spells cost {1} more to cast.",
+                keywords: KeywordAbility.FirstStrike,
+                power: 2,
+                toughness: 1
+            ),
+
+            new CardDefinition(
+                name: "Sensei's Divining Top",
+                manaCost: "{1}",
+                colorIdentity: CardColor.Colorless,
+                types: CardType.Artifact,
+                supertypes: CardSupertype.None,
+                subtypes: new string[0],
+                rarity: CardRarity.Uncommon,
+                text: "{1}: Look at the top three cards of your library, then put them back in any order.\n{T}: Draw a card, then put Sensei's Divining Top on top of its owner's library."
+            ),
+
+            new CardDefinition(
+                name: "Primeval Titan",
+                manaCost: "{4}{G}{G}",
+                colorIdentity: CardColor.Green,
+                types: CardType.Creature,
+                supertypes: CardSupertype.None,
+                subtypes: new[] { "Giant" },
+                rarity: CardRarity.Mythic,
+                text: "Trample. Whenever Primeval Titan enters the battlefield or attacks, you may search your library for up to two land cards, put them onto the battlefield tapped, then shuffle.",
+                keywords: KeywordAbility.Trample,
+                power: 6,
+                toughness: 6
+            ),
+
+            new CardDefinition(
+                name: "Mother of Runes",
+                manaCost: "{W}",
+                colorIdentity: CardColor.White,
+                types: CardType.Creature,
+                supertypes: CardSupertype.None,
+                subtypes: new[] { "Human", "Cleric" },
+                rarity: CardRarity.Uncommon,
+                text: "{T}: Target creature you control gains protection from the color of your choice until end of turn.",
+                power: 1,
+                toughness: 1
+            ),
+
+            new CardDefinition(
+                name: "Aether Vial",
+                manaCost: "{1}",
+                colorIdentity: CardColor.Colorless,
+                types: CardType.Artifact,
+                supertypes: CardSupertype.None,
+                subtypes: new string[0],
+                rarity: CardRarity.Rare,
+                text: "At the beginning of your upkeep, you may put a charge counter on Aether Vial.\n{T}: You may put a creature card with converted mana cost equal to the number of charge counters on Aether Vial from your hand onto the battlefield."
+            ),
+
+            new CardDefinition(
+                name: "Ensnaring Bridge",
+                manaCost: "{3}",
+                colorIdentity: CardColor.Colorless,
+                types: CardType.Artifact,
+                supertypes: CardSupertype.None,
+                subtypes: new string[0],
+                rarity: CardRarity.Rare,
+                text: "Creatures with power greater than the number of cards in your hand can’t attack."
+            ),
+
+            new CardDefinition(
+                name: "Bloodbraid Elf",
+                manaCost: "{2}{R}{G}",
+                colorIdentity: CardColor.Red | CardColor.Green,
+                types: CardType.Creature,
+                supertypes: CardSupertype.None,
+                subtypes: new[] { "Elf", "Berserker" },
+                rarity: CardRarity.Uncommon,
+                text: "Haste. Cascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom of your library in a random order.)",
+                keywords: KeywordAbility.Haste,
+                power: 3,
+                toughness: 2
+            ),
+
+            new CardDefinition(
+                name: "Batterskull",
+                manaCost: "{5}",
+                colorIdentity: CardColor.Colorless,
+                types: CardType.Artifact,
+                supertypes: CardSupertype.None,
+                subtypes: new[] { "Equipment" },
+                rarity: CardRarity.Mythic,
+                text: "Living weapon. Equipped creature gets +4/+4 and has vigilance and lifelink.\n{3}: Return Batterskull to its owner’s hand.\nEquip {5}."
+            ),
+
+            new CardDefinition(
+                name: "Teferi, Hero of Dominaria",
+                manaCost: "{3}{W}{U}",
+                colorIdentity: CardColor.White | CardColor.Blue,
+                types: CardType.Planeswalker,
+                supertypes: CardSupertype.Legendary,
+                subtypes: new[] { "Teferi" },
+                rarity: CardRarity.Mythic,
+                text: "+1: Draw a card. At the beginning of the next end step, untap two lands.\n−3: Put target nonland permanent into its owner’s library third from the top.\n−8: You get an emblem with 'Whenever you draw a card, exile target permanent an opponent controls.'",
+                loyalty: 4
+            ),
+
+            new CardDefinition(
+                name: "Rest in Peace",
+                manaCost: "{1}{W}",
+                colorIdentity: CardColor.White,
+                types: CardType.Enchantment,
+                supertypes: CardSupertype.None,
+                subtypes: new string[0],
+                rarity: CardRarity.Rare,
+                text: "When Rest in Peace enters the battlefield, exile all graveyards. If a card or token would be put into a graveyard from anywhere, exile it instead."
+            ),
+
+            new CardDefinition(
+                name: "Thought Vessel",
+                manaCost: "{2}",
+                colorIdentity: CardColor.Colorless,
+                types: CardType.Artifact,
+                supertypes: CardSupertype.None,
+                subtypes: new string[0],
+                rarity: CardRarity.Uncommon,
+                text: "You have no maximum hand size.\n{T}: Add {C}."
+            ),
+
+            new CardDefinition(
+                name: "Monastery Swiftspear",
+                manaCost: "{R}",
+                colorIdentity: CardColor.Red,
+                types: CardType.Creature,
+                supertypes: CardSupertype.None,
+                subtypes: new[] { "Human", "Monk" },
+                rarity: CardRarity.Uncommon,
+                text: "Haste. Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
+                keywords: KeywordAbility.Haste,
+                power: 1,
+                toughness: 2
+            ),
+
+            new CardDefinition(
+                name: "Cyclonic Rift",
+                manaCost: "{1}{U}",
+                colorIdentity: CardColor.Blue,
+                types: CardType.Instant,
+                supertypes: CardSupertype.None,
+                subtypes: new string[0],
+                rarity: CardRarity.Rare,
+                text: "Return target nonland permanent you don’t control to its owner’s hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change its text by replacing all instances of 'target' with 'each'.)"
+            )
         };
     }
 }
