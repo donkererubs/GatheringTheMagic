@@ -1,13 +1,18 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using GatheringTheMagic.Domain.Enums;
+using GatheringTheMagic.Domain.Logging;
 using GatheringTheMagic.Infrastructure.Data;
 
 namespace GatheringTheMagic.Domain.Entities;
 
 public class Game
 {
+    private readonly IGameLogger _logger;
+
     private static readonly Random _rng = new();
 
     // Immutable deck‐list dictionaries...
@@ -38,8 +43,10 @@ public class Game
     public Owner ActivePlayer { get; private set; }
     public TurnPhase CurrentPhase { get; private set; }
 
-    public Game()
+    public Game(IGameLogger logger)
     {
+        _logger = logger;
+
         // Build initial state
         Reset();
     }
@@ -98,6 +105,16 @@ public class Game
 
         var card = deck.Draw();    // removes from deck, MoveTo(Zone.Hand)
         hand.Add(card);
+
+        if (card != null)
+        {
+            _logger.Log($"Player draws a card.");  // e.g. "Alice draws a card."
+        }
+        else
+        {
+            _logger.Log($"Player attempted to draw but library was empty.");
+        }
+
         return card;
     }
 
@@ -123,6 +140,14 @@ public class Game
             OpponentHand.Remove(card);
 
         card.MoveTo(Zone.Play);
+
+        bool isLand = card.Definition.Types.HasFlag(CardType.Land);
+        if (isLand) RegisterLandPlay(ActivePlayer);
+
+        if (card != null)
+        {
+            _logger.Log($"Player plays {card.Definition?.Name ?? "a card"}.");  // e.g. "Alice draws a card."
+        }
     }
 
 
@@ -229,6 +254,7 @@ public class Game
     }
 
     /// <summary>Can the given player play a land right now?</summary>
+    public bool CanPlayLand() => CanPlayLand(ActivePlayer);
     public bool CanPlayLand(Owner owner) => _landPlaysThisTurn[owner] < 1;
 
     /// <summary>Record that the given player has just played a land.</summary>

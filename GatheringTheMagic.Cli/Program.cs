@@ -18,7 +18,7 @@ namespace GatheringTheMagic.Cli
             }
 
             // 1) Initialize game and opening hands
-            var game = new Game();
+            var game = new Game(null);
             for (int i = 0; i < 7; i++) game.DrawCard(Owner.Player);
             for (int i = 0; i < 7; i++) game.DrawCard(Owner.Opponent);
 
