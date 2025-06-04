@@ -4,197 +4,199 @@
     <meta charset="UTF-8" />
     <title>GatheringTheMagic – Click Deck to Draw</title>
     <style>
-         /* Reset margins/padding and force full-height */
-         html, body {
-             margin: 0;
-             padding: 0;
-             height: 100%;
-         }
+            /* Reset margins/padding and force full-height */
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
 
-         body {
-             display: flex;
-             flex-direction: column;
-             height: 100vh;
-             font-family: sans-serif;
-         }
+            body {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                font-family: sans-serif;
+            }
 
-         /* ------------------------------
-        Opponent zone (top 35%)
+            /* ------------------------------
+           Opponent zone (top 35%)
         ------------------------------ */
-         .opponent-zone {
-             flex: 0 0 35%;
-             background-color: #F08080; /* light coral */
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             position: relative;
-         }
+            .opponent-zone {
+                flex: 0 0 35%;
+                background-color: #F08080; /* light coral */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
 
-             .opponent-zone button {
-                 padding: 0.75rem 1.5rem;
-                 font-size: 1.25rem;
-                 cursor: pointer;
-                 border: none;
-                 border-radius: 4px;
-                 background-color: #ffffff;
-                 color: #F08080;
-             }
+                .opponent-zone button {
+                    padding: 0.75rem 1.5rem;
+                    font-size: 1.25rem;
+                    cursor: pointer;
+                    border: none;
+                    border-radius: 4px;
+                    background-color: #ffffff;
+                    color: #F08080;
+                }
 
-                 .opponent-zone button:hover {
-                     background-color: #f0f0f0;
-                 }
+                    .opponent-zone button:hover {
+                        background-color: #f0f0f0;
+                    }
 
-         /* ------------------------------
-        Phase tracker strip (10%, min-height: 20px)
+            /* ------------------------------
+           Phase tracker strip (10%, min-height: 20px)
         ------------------------------ */
-         .phase-zone {
-             flex: 0 0 10%;
-             min-height: 20px;
-             background-color: #EEE8AA; /* pale goldenrod */
-             display: flex;
-             align-items: center;
-             justify-content: center;
-         }
+            .phase-zone {
+                flex: 0 0 10%;
+                min-height: 20px;
+                background-color: #EEE8AA; /* pale goldenrod */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
 
-             .phase-zone button {
-                 padding: 0.5rem 1rem;
-                 font-size: 1rem;
-                 cursor: pointer;
-                 border: none;
-                 border-radius: 4px;
-                 background-color: #FFFFFF;
-                 color: #8B4513; /* saddle brown */
-             }
+                .phase-zone button {
+                    padding: 0.5rem 1rem;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    border: none;
+                    border-radius: 4px;
+                    background-color: #FFFFFF;
+                    color: #8B4513; /* saddle brown */
+                }
 
-                 .phase-zone button:hover {
-                     background-color: #f5f5f5;
-                 }
+                    .phase-zone button:hover {
+                        background-color: #f5f5f5;
+                    }
 
-         /* ------------------------------
-        Player zone (bottom 55%)
+            /* ------------------------------
+           Player zone (bottom 55%)
         ------------------------------ */
-         .player-zone {
-             flex: 0 0 55%;
-             display: flex;
-             background-color: #B0C4DE; /* light steel blue */
-         }
+            .player-zone {
+                flex: 0 0 55%;
+                display: flex;
+                background-color: #B0C4DE; /* light steel blue */
+            }
+            /* Left column (15% width) */
+            .left-zone {
+                flex: 0 0 15%;
+                background-color: #D3D3D3; /* light gray */
+            }
+            /* Middle column (70% width) with three equal rows */
+            .middle-zone {
+                flex: 0 0 70%;
+                display: flex;
+                flex-direction: column;
+            }
 
-         /* Left column (15% width) */
-         .left-zone {
-             flex: 0 0 15%;
-             background-color: #D3D3D3; /* light gray */
-         }
+                .middle-zone .top {
+                    flex: 1;
+                    background-color: #90EE90; /* light green */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
 
-         /* Middle column (70% width) with three equal rows */
-         .middle-zone {
-             flex: 0 0 70%;
-             display: flex;
-             flex-direction: column;
-         }
+                .middle-zone .center {
+                    flex: 1;
+                    background-color: #FFFFE0; /* light yellow */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
 
-             .middle-zone .top {
-                 flex: 1;
-                 background-color: #90EE90; /* light green */
-                 display: flex;
-                 align-items: center;
-                 justify-content: center;
-             }
+                .middle-zone .bottom {
+                    flex: 1;
+                    background-color: #FFB6C1; /* light pink */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                }
 
-             .middle-zone .center {
-                 flex: 1;
-                 background-color: #FFFFE0; /* light yellow */
-                 display: flex;
-                 align-items: center;
-                 justify-content: center;
-             }
+            /* Right column (15% width) with two equal rows */
+            .right-zone {
+                flex: 0 0 15%;
+                display: flex;
+                flex-direction: column;
+            }
+                /* id="deckZone" is on this .top so it fills the entire salmon area */
+                .right-zone .top {
+                    flex: 1;
+                    background-color: #FFA07A; /* light salmon */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                    cursor: pointer; /* entire salmon cell shows pointer */
+                }
 
-             .middle-zone .bottom {
-                 flex: 1;
-                 background-color: #FFB6C1; /* light pink */
-                 display: flex;
-                 align-items: center;
-                 justify-content: center;
-                 position: relative;
-             }
+                .right-zone .bottom {
+                    flex: 1;
+                    background-color: #87CEFA; /* light sky blue */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                }
 
-         /* Right column (15% width) with two equal rows */
-         .right-zone {
-             flex: 0 0 15%;
-             display: flex;
-             flex-direction: column;
-         }
-
-             .right-zone .top {
-                 flex: 1;
-                 background-color: #FFA07A; /* light salmon */
-                 display: flex;
-                 align-items: center;
-                 justify-content: center;
-                 position: relative;
-                 cursor: pointer; /* so user knows it’s clickable */
-             }
-
-             .right-zone .bottom {
-                 flex: 1;
-                 background-color: #87CEFA; /* light sky blue */
-                 display: flex;
-                 align-items: center;
-                 justify-content: center;
-                 position: relative;
-             }
-
-         /* ------------------------------
-        New Inner Zones (centered)
+            /* ------------------------------
+           New Inner Zones (centered)
         ------------------------------ */
-         .hand-zone {
-             width: 80%;
-             height: 60%;
-             background-color: #FFD700; /* gold */
-             display: flex;
-             align-items: center;
-             justify-content: flex-start;
-             flex-wrap: wrap;
-             padding: 4px;
-             gap: 8px;
-             border-radius: 4px;
-             color: #000;
-         }
+            .hand-zone {
+                width: 80%;
+                height: 60%;
+                background-color: #FFD700; /* gold */
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+                padding: 4px;
+                gap: 8px;
+                border-radius: 4px;
+                color: #000;
+            }
 
-         .deck-zone {
-             width: 80%;
-             height: 60%;
-             background-color: #8A2BE2; /* blue violet */
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             color: #fff;
-             border-radius: 4px;
-             font-size: 1rem;
-             user-select: none;
-         }
+            .graveyard-zone {
+                width: 80%;
+                height: 60%;
+                background-color: #2E8B57; /* sea green */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                border-radius: 4px;
+                font-size: 1rem;
+            }
 
-         .graveyard-zone {
-             width: 80%;
-             height: 60%;
-             background-color: #2E8B57; /* sea green */
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             color: #fff;
-             border-radius: 4px;
-             font-size: 1rem;
-         }
+            /* Each card “pill” within hand-zone */
+            .card-pill {
+                background-color: #FFF;
+                border: 1px solid #999;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 0.85rem;
+                color: #333;
+                white-space: nowrap;
+                cursor: pointer;
+            }
 
-         /* Each card “pill” within hand-zone */
-         .card-pill {
-             background-color: #FFF;
-             border: 1px solid #999;
-             border-radius: 4px;
-             padding: 4px 8px;
-             font-size: 0.85rem;
-             color: #333;
-             white-space: nowrap;
-         }
+            /* Battlefield zone styling */
+            .battlefield-zone {
+                width: 80%;
+                height: 60%;
+                background-color: #ADD8E6; /* light blue */
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+                padding: 4px;
+                gap: 8px;
+                border-radius: 4px;
+                color: #000;
+                border: 2px dashed #000;
+            }
     </style>
 </head>
 
@@ -216,24 +218,26 @@
 
         <!-- Middle column (70%), split into 3 rows -->
         <div class="middle-zone">
-            <div class="top">
-                Middle Top
-            </div>
+            <div class="top">Middle Top</div>
             <div class="center">
-                Middle Center
+                <!-- Battlefield area -->
+                <div class="battlefield-zone" id="battlefieldZone">
+                    <!-- Played cards will appear here -->
+                </div>
             </div>
             <div class="bottom">
                 <!-- Hand Zone (centered) -->
                 <div class="hand-zone" id="handZone">
-                    <!-- Cards will be injected here via JS when game starts or draws -->
+                    <!-- Cards get injected here via JS -->
                 </div>
             </div>
         </div>
 
-        <!-- Right column (15%), split into 2 rows -->
+        <!-- Right column (15% width) with two equal rows -->
         <div class="right-zone">
+            <!-- id="deckZone" is on this “top” cell so it fills the entire salmon area -->
             <div class="top" id="deckZone">
-                <!-- Deck count shown here; clicking this triggers a DrawCard API call -->
+                <!-- “Deck: N” text will be inserted here -->
             </div>
             <div class="bottom">
                 <!-- Graveyard (static for now) -->
@@ -245,71 +249,166 @@
     </div>
 
     <script>
-        // When “Start Game” is clicked:
+        // ============================
+        // Client‐side JavaScript
+        // ============================
+
+        let currentGameId = null;
+
+        // ─────────────────────────────────────────────────────────────────
+        // 1) Event Delegation on #handZone so any .card-pill (present now
+        //    or added later) triggers an alert.
+        // ─────────────────────────────────────────────────────────────────
+        document.getElementById("handZone").addEventListener("click", function (event) {
+            const clickedPill = event.target.closest(".card-pill");
+            if (!clickedPill) return;
+            const cardName = clickedPill.innerText;
+            alert(`You clicked: ${cardName}`);
+
+            // Try to call playCard even if currentGameId is undefined:
+            const instanceId = clickedPill.getAttribute("data-instance-id");
+            playCard(instanceId);
+        });
+
+        // ─────────────────────────────────────────────────────────────────
+        // 2) renderHand(cards) – inserts <div class="card-pill">…</div> for each card.
+        //    No per-pill listeners needed because of event delegation above.
+        // ─────────────────────────────────────────────────────────────────
+        function renderHand(cards) {
+            const handZone = document.getElementById("handZone");
+            handZone.innerHTML = ""; // clear any existing pills
+
+            cards.forEach(card => {
+                const pill = document.createElement("div");
+                pill.className = "card-pill";
+                pill.setAttribute("data-instance-id", card.instanceId);
+                pill.innerText = card.name;
+                handZone.appendChild(pill);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 3) renderBattlefield(cards) – unchanged
+        // ─────────────────────────────────────────────────────────────────
+        function renderBattlefield(cards) {
+            const bfZone = document.getElementById("battlefieldZone");
+            bfZone.innerHTML = "";
+
+            cards.forEach(card => {
+                const pill = document.createElement("div");
+                pill.className = "card-pill";
+                pill.innerText = card.name;
+                bfZone.appendChild(pill);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 4) playCard(cardInstanceId) – we no longer block if currentGameId is null.
+        // ─────────────────────────────────────────────────────────────────
+        async function playCard(cardInstanceId) {
+            console.log("Attempting to play card:", cardInstanceId, "with currentGameId =", currentGameId);
+            try {
+                const resp = await fetch("/api/game/play", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    // send gameId if defined, otherwise omit it entirely
+                    body: JSON.stringify(
+                        currentGameId
+                            ? { gameId: currentGameId, cardInstanceId: cardInstanceId }
+                            : { cardInstanceId: cardInstanceId }
+                    )
+                });
+                if (!resp.ok) {
+                    console.error("Failed to play card:", resp.status, await resp.text());
+                    return;
+                }
+                const data = await resp.json();
+                console.log("/api/game/play response:", data);
+
+                // Re-render hand & battlefield if returned
+                if (data.hand) renderHand(data.hand);
+                if (data.battlefield) renderBattlefield(data.battlefield);
+            } catch (err) {
+                console.error("Error calling /api/game/play:", err);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 5) “Start Game” button logic
+        // ─────────────────────────────────────────────────────────────────
         document.getElementById("startGameBtn").addEventListener("click", async function () {
-            // 1) Hide the Start Game button
+            console.log("Start Game clicked");
+            // Hide “Start Game” so it cannot be clicked again
             this.style.display = "none";
 
             try {
-                // 2) Call POST /api/game to get initial deckCount + hand
                 const resp = await fetch("/api/game", { method: "POST" });
                 if (!resp.ok) {
-                    console.error("Failed to start game: HTTP " + resp.status);
+                    console.error("Failed to start game:", resp.status);
                     return;
                 }
-                const data = await resp.json(); // { deckCount, hand: [ { name, imageUrl }, ... ] }
+                const data = await resp.json();
+                console.log("/api/game response:", data);
 
-                // 3) Show deck count in the Deck zone
+                // If the response includes gameId or id, store it; otherwise, leave null
+                currentGameId = data.gameId ?? data.id ?? null;
+                console.log("→ Setting currentGameId =", currentGameId);
+
+                // Show deck count in the salmon cell
                 document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
 
-                // 4) Render each card in the Hand zone
-                const handZone = document.getElementById("handZone");
-                handZone.innerHTML = "";
-                data.hand.forEach(card => {
-                    const pill = document.createElement("div");
-                    pill.className = "card-pill";
-                    pill.innerText = card.name;
-                    handZone.appendChild(pill);
-                });
-            }
-            catch (err) {
+                // Render initial hand
+                renderHand(data.hand);
+
+                // Start with an empty battlefield
+                renderBattlefield([]);
+            } catch (err) {
                 console.error("Error calling /api/game:", err);
             }
         });
 
-        // “Next Phase” button - not implemented yet
+        // ─────────────────────────────────────────────────────────────────
+        // 6) “Next Phase” button (stub)
+        // ─────────────────────────────────────────────────────────────────
         document.getElementById("nextPhaseBtn").addEventListener("click", () => {
             console.log("Next Phase clicked (not implemented)");
         });
 
-        // 5) When user clicks on “Deck” area, call DrawCard and update UI
+        // ─────────────────────────────────────────────────────────────────
+        // 7) “Draw Card” – now we always send the draw request, regardless of currentGameId.
+        // ─────────────────────────────────────────────────────────────────
         document.getElementById("deckZone").addEventListener("click", async () => {
+            console.log("Deck clicked; currentGameId =", currentGameId);
+
             try {
-                // Call the draw endpoint
-                const resp = await fetch("/api/game/draw", { method: "POST" });
+                const resp = await fetch("/api/game/draw", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    // send gameId if defined, otherwise omit it
+                    body: JSON.stringify(currentGameId ? { gameId: currentGameId } : {})
+                });
                 if (!resp.ok) {
-                    console.error("Failed to draw card: HTTP " + resp.status);
+                    console.error("Failed to draw card:", resp.status);
                     return;
                 }
                 const data = await resp.json();
-                // data = { deckCount: number, drawnCard: { name, imageUrl } | null }
+                console.log("/api/game/draw response:", data);
 
-                // 5a) Update deck count in the Deck zone
+                // Update deck count
                 document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
 
-                // 5b) If drawnCard is not null, append it to Hand zone
+                // If a card was drawn, append it to the hand zone
                 if (data.drawnCard !== null) {
                     const handZone = document.getElementById("handZone");
                     const pill = document.createElement("div");
                     pill.className = "card-pill";
+                    pill.setAttribute("data-instance-id", data.drawnCard.instanceId);
                     pill.innerText = data.drawnCard.name;
                     handZone.appendChild(pill);
                 } else {
-                    // Optionally, you could show “Deck is empty” or disable further clicks
                     console.log("No more cards to draw.");
                 }
-            }
-            catch (err) {
+            } catch (err) {
                 console.error("Error calling /api/game/draw:", err);
             }
         });
