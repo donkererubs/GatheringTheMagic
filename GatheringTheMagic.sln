@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatheringTheMagic", "Gather
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatheringTheMagic.Web", "GatheringTheMagic.Web\GatheringTheMagic.Web.csproj", "{1D25B281-C882-4190-9B8D-DBB39B497A62}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatheringTheMagic.Application", "GatheringTheMagic.Application\GatheringTheMagic.Application.csproj", "{D0B8A67E-9491-4240-8497-6C182580E041}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,8 +23,15 @@ Global
 		{1D25B281-C882-4190-9B8D-DBB39B497A62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1D25B281-C882-4190-9B8D-DBB39B497A62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1D25B281-C882-4190-9B8D-DBB39B497A62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0B8A67E-9491-4240-8497-6C182580E041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0B8A67E-9491-4240-8497-6C182580E041}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0B8A67E-9491-4240-8497-6C182580E041}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0B8A67E-9491-4240-8497-6C182580E041}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A29B4E8D-FB23-47CC-92E8-019379B09766}
 	EndGlobalSection
 EndGlobal

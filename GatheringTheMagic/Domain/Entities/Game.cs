@@ -6,20 +6,20 @@ namespace GatheringTheMagic.Domain.Entities;
 public class Game
 {
     private readonly IGameLogger _logger;
-    private readonly IDeckFactory _deckFactory;
+    private readonly IDeckBuilder _deckBuilder;
+    //private readonly IDeckFactory _deckFactory;
     private readonly ICardDrawService _drawService;
     private readonly ITurnManager _turnManager;
     private readonly ICardPlayService _playService;
     private readonly ILandPlayTracker _landPlayTracker;
 
 
-
     private static readonly Random _rng = new();
     public IReadOnlyDictionary<CardDefinition, int> PlayerOriginalDeckList { get; }
     public IReadOnlyDictionary<CardDefinition, int> OpponentOriginalDeckList { get; }
 
-    public Deck PlayerDeck { get; private set; }
-    public Deck OpponentDeck { get; private set; }
+    public IDeck PlayerDeck { get; private set; }
+    public IDeck OpponentDeck { get; private set; }
 
     public List<CardInstance> PlayerHand { get; } = new();
     public List<CardInstance> OpponentHand { get; } = new();
@@ -36,14 +36,16 @@ public class Game
 
     public Game(
         IGameLogger logger,
-        IDeckFactory deckFactory,
+        //IDeckFactory deckFactory,
+        IDeckBuilder deckBuilder,
         ICardDrawService drawService,
         ITurnManager turnManager,
         ICardPlayService playService,
         ILandPlayTracker landPlayTracker)
     {
         _logger = logger;
-        _deckFactory = deckFactory;
+        //_deckFactory = deckFactory;
+        _deckBuilder = deckBuilder;
         _drawService = drawService;
         _turnManager = turnManager;
         _playService = playService;
@@ -55,12 +57,10 @@ public class Game
     public void Reset()
     {
         // 1) Build & shuffle new decks via the factory
-        PlayerDeck = _deckFactory.CreateRandomDeck(Owner.Player);
-        OpponentDeck = _deckFactory.CreateRandomDeck(Owner.Opponent);
-
-        //
-        PlayerDeck.Shuffle();
-        OpponentDeck.Shuffle();
+        //PlayerDeck = _deckFactory.CreateRandomDeck(Owner.Player);
+        //OpponentDeck = _deckFactory.CreateRandomDeck(Owner.Opponent);
+        PlayerDeck = _deckBuilder.BuildDeck(Owner.Player);
+        OpponentDeck = _deckBuilder.BuildDeck(Owner.Opponent);
 
         // 2) Clear all zones
         ClearAllZones();
@@ -76,6 +76,8 @@ public class Game
         // 5) Set starting player and phase
         ActivePlayer = Owner.Player;
         CurrentPhase = TurnPhase.Untap;
+
+        _logger.Log("(Re)started game!");
     }
 
     public void ClearAllZones()

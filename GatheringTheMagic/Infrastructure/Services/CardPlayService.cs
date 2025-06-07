@@ -1,4 +1,5 @@
-﻿using GatheringTheMagic.Domain.Entities;
+﻿using System.Runtime.CompilerServices;
+using GatheringTheMagic.Domain.Entities;
 using GatheringTheMagic.Domain.Enums;
 using GatheringTheMagic.Domain.Interfaces;
 
@@ -10,6 +11,11 @@ public class CardPlayService(IGameLogger logger) : ICardPlayService
 
     public void PlayCard(Game game, CardInstance card)
     {
+        // --- Enforce one-land-per-turn here ---
+        bool isLand = card.Definition.Types.HasFlag(CardType.Land);
+        if (isLand && !game.CanPlayLand(card.Controller))
+            throw new InvalidOperationException("You may only play one land per turn.");
+
         // 1) Put on battlefield
         var battlefield = card.Controller == Owner.Player
             ? game.PlayerBattlefield
@@ -26,7 +32,7 @@ public class CardPlayService(IGameLogger logger) : ICardPlayService
         card.MoveTo(Zone.Play);
 
         // 4) If it’s a land, let Game track that
-        if (card.Definition.Types.HasFlag(CardType.Land))
+        if (isLand)
             game.RegisterLandPlay(card.Controller);
 
         // 5) Log the play

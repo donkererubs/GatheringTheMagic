@@ -7,6 +7,12 @@ namespace GatheringTheMagic.Infrastructure.Data;
 public class RandomDeckFactory : IDeckFactory
 {
     private readonly Random _rng = new();
+    private readonly IShuffleService _shuffler;
+
+    public RandomDeckFactory(IShuffleService shuffler)
+    {
+        _shuffler = shuffler;
+    }
 
     public Deck CreateRandomDeck(Owner owner)
     {
@@ -25,8 +31,9 @@ public class RandomDeckFactory : IDeckFactory
                 // skip illegal duplicates
             }
         }
-
-        deck.Shuffle();
+        
+        _shuffler.Shuffle((IList<CardInstance>)deck.Cards);
+        
         return deck;
     }
 }

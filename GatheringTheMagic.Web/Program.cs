@@ -1,151 +1,84 @@
 ﻿using System.Text.Json.Serialization;
-using GatheringTheMagic.Domain.Entities;
-using GatheringTheMagic.Domain.Enums;
+using GatheringTheMagic.Application.Services;
+using GatheringTheMagic.Domain.Entities;            // for CardDefinition
 using GatheringTheMagic.Domain.Interfaces;
-using GatheringTheMagic.Infrastructure.Data;
-using GatheringTheMagic.Infrastructure.Services;
+using GatheringTheMagic.Infrastructure.Data;         // for SampleCards
+using GatheringTheMagic.Infrastructure.Logging;      // for GameLogManager
+using GatheringTheMagic.Infrastructure.Services;     // for all service implementations
 using GatheringTheMagic.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register Game as a singleton so its state persists across calls
-builder.Services.AddSingleton<Game>(sp =>
-    new Game(
-      sp.GetRequiredService<IGameLogger>(),
-      sp.GetRequiredService<IDeckFactory>(),
-      sp.GetRequiredService<ICardDrawService>(),
-      sp.GetRequiredService<ITurnManager>(),
-      sp.GetRequiredService<ICardPlayService>(),
-      sp.GetRequiredService<ILandPlayTracker>()
-    ));
+// —————— Dependency Injection ——————
 
-// Register GameLogManager (singleton) for IGameLogger
+// 1) Card pool
+builder.Services
+    .AddSingleton<IReadOnlyList<CardDefinition>>(_ => SampleCards.All);
+
+// 2) Core domain services
 builder.Services.AddSingleton<IGameLogger, GameLogManager>();
-builder.Services.AddSingleton<IDeckFactory, RandomDeckFactory>();
+builder.Services.AddSingleton<IShuffleService, FisherYatesShuffleService>();
+builder.Services.AddSingleton<IDeckBuilder, DefaultDeckBuilder>();
 builder.Services.AddSingleton<ICardDrawService, CardDrawService>();
+builder.Services.AddSingleton<IPhaseHandler, UntapPhaseHandler>();
+builder.Services.AddSingleton<IPhaseHandler, UpkeepPhaseHandler>();
+builder.Services.AddSingleton<IPhaseHandler, DrawPhaseHandler>();
+builder.Services.AddSingleton<IPhaseHandler, Main1PhaseHandler>();
+builder.Services.AddSingleton<IPhaseHandler, CombatPhaseHandler>();
+builder.Services.AddSingleton<IPhaseHandler, Main2PhaseHandler>();
+builder.Services.AddSingleton<IPhaseHandler, EndPhaseHandler>();
+builder.Services.AddSingleton<IPhaseHandler, CleanupPhaseHandler>();
 builder.Services.AddSingleton<ITurnManager, TurnManager>();
 builder.Services.AddSingleton<ICardPlayService, CardPlayService>();
 builder.Services.AddSingleton<ILandPlayTracker, LandPlayTracker>();
 
+// 3) Domain entry point
+builder.Services.AddSingleton<Game>();
+
+// 4) Application layer
+builder.Services.AddSingleton<IGameService, GameService>();
 
 var app = builder.Build();
 
-// ────────────────────────────────────────────────────────────────────────────────
-// 1) POST /api/game → Start (or reset) a new game. Returns { deckCount, hand }.
-// ────────────────────────────────────────────────────────────────────────────────
-app.MapPost("/api/game", ([FromServices] Game game) =>
+// —————— Endpoints ——————
+
+// 1) POST /api/game → Start (or reset) a new game.
+app.MapPost("/api/game", ([FromServices] IGameService svc) =>
 {
-    game.Reset();
-
-    var deckCount = game.PlayerDeck.Cards.Count;
-    var handList = game.PlayerHand.Select(ci => new
-    {
-        name = ci.Definition.Name,
-        types = ci.Definition.Types,
-        instanceId = ci.Id  // <-- use the correct property for your CardInstance
-        // imageUrl = ci.Definition.ImageUrl
-    }).ToList();
-
-    return Results.Json(new
-    {
-        deckCount,
-        hand = handList
-    });
+    var result = svc.StartNewGame();
+    return Results.Json(result);
 })
 .WithName("StartGame");
 
-// ────────────────────────────────────────────────────────────────────────────────
-// 2) POST /api/game/draw → Draw one card from PlayerDeck → PlayerHand.
-//    Returns { deckCount, drawnCard } or drawnCard = null if deck is empty.
-// ────────────────────────────────────────────────────────────────────────────────
-app.MapPost("/api/game/draw", ([FromServices] Game game) =>
+// 2) POST /api/game/draw → Draw one card.
+app.MapPost("/api/game/draw", ([FromServices] IGameService svc) =>
 {
-    var cardInstance = game.DrawCard();
-    if (cardInstance == null)
-    {
-        return Results.Json(new
-        {
-            deckCount = game.PlayerDeck.Cards.Count,
-            drawnCard = (object?)null
-        });
-    }
-
-    var drawnCard = new
-    {
-        name = cardInstance.Definition.Name,
-        types = cardInstance.Definition.Types,
-        instanceId = cardInstance.Id
-        // imageUrl = cardInstance.Definition.ImageUrl
-    };
-
-    return Results.Json(new
-    {
-        deckCount = game.PlayerDeck.Cards.Count,
-        drawnCard
-    });
+    var result = svc.DrawCard();
+    return Results.Json(result);
 })
 .WithName("DrawCard");
 
-// ────────────────────────────────────────────────────────────────────────────────
-// 3) POST /api/game/play → Play a card from PlayerHand → PlayerBattlefield.
-//    Expects JSON body { "instanceId": "<GUID>" }.
-//    Returns { hand: [ … ], battlefield: [ … ] }.
-// ────────────────────────────────────────────────────────────────────────────────
-app.MapPost("/api/game/play", async ([FromServices] Game game, HttpRequest req) =>
+// 3) POST /api/game/play → Play a card.
+app.MapPost("/api/game/play", async ([FromServices] IGameService svc, HttpRequest req) =>
 {
-    // 1) Deserialize JSON into PlayRequest
     var payload = await req.ReadFromJsonAsync<PlayRequest>();
-    // 2) Reject if missing or Guid.Empty
-    if (payload == null || payload.InstanceId == Guid.Empty)
+    if (payload?.InstanceId == Guid.Empty)
+        return Results.BadRequest(new { error = "Invalid instanceId." });
+
+    try
     {
-        return Results.BadRequest(new { error = "Missing or invalid 'instanceId' in request body." });
+        var result = svc.PlayCard(payload.InstanceId);
+        return Results.Json(result);
     }
-
-    // 3) Find matching card in PlayerHand
-    var cardToPlay = game.PlayerHand
-        .FirstOrDefault(ci => ci.Id == payload.InstanceId);
-
-    if (cardToPlay == null)
+    catch (InvalidOperationException ex)
     {
-        return Results.BadRequest(new { error = $"Card with InstanceId '{payload.InstanceId}' not found in hand." });
+        return Results.BadRequest(new { error = ex.Message });
     }
-
-    bool isLand = cardToPlay.Definition.Types.HasFlag(CardType.Land);
-    if (isLand && !game.CanPlayLand())
-    {
-        return Results.BadRequest(new { error = $"Already played a land card" });
-    }
-
-    // 4) Move it onto the battlefield
-    game.PlayCard(cardToPlay);
-
-    // 5) Build updated lists
-    var updatedHand = game.PlayerHand.Select(ci => new
-    {
-        name = ci.Definition.Name,
-        types = ci.Definition.Types,
-        instanceId = ci.Id
-        // imageUrl = ci.Definition.ImageUrl
-    }).ToList();
-
-    var updatedBattlefield = game.PlayerBattlefield.Select(ci => new
-    {
-        name = ci.Definition.Name,
-        types = ci.Definition.Types,
-        instanceId = ci.Id
-        // imageUrl = ci.Definition.ImageUrl
-    }).ToList();
-
-    return Results.Json(new
-    {
-        hand = updatedHand,
-        battlefield = updatedBattlefield
-    });
 })
 .WithName("PlayCard");
 
-// Serve your index.html (and related static files) as fallback
+// Serve index.html for any other routes
 app.MapFallbackToFile("index.html");
 
 app.Run();
@@ -155,7 +88,6 @@ app.Run();
 /// </summary>
 public class PlayRequest
 {
-    // Match JSON property "instanceId" exactly
     [JsonPropertyName("instanceId")]
     public Guid InstanceId { get; set; }
 }
