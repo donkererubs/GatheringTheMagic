@@ -1,18 +1,12 @@
 ﻿using GatheringTheMagic.Domain.Entities;
 using GatheringTheMagic.Domain.Enums;
 using GatheringTheMagic.Domain.Interfaces;
-using GatheringTheMagic.Infrastructure.Logging;
 
 namespace GatheringTheMagic.Infrastructure.Services;
 
-public class CardDrawService : ICardDrawService
+public class CardDrawService(IGameLogger logger) : ICardDrawService
 {
-    private readonly GameLogger _logger;
-
-    public CardDrawService(IGameLogger logger)
-    {
-        //_logger = logger;
-    }
+    private readonly IGameLogger _logger = logger;
 
     public void DrawOpeningHand(Game game, Owner owner, int count = 7)
     {
@@ -32,11 +26,11 @@ public class CardDrawService : ICardDrawService
         {
             card = deck.Draw();
             hand.Add(card);
-            //_logger.Log($"{owner} draws {(card.Definition?.Name ?? "a card")}.");
+            _logger.Log($"{owner} draws {(card.Definition?.Name ?? "a card")}.");
         }
         else
         {
-            //_logger.Log($"{owner} attempted to draw but library was empty.");
+            _logger.Log($"{owner} attempted to draw but library was empty.");
         }
 
         return card;

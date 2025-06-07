@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using GatheringTheMagic.Domain.Entities;
+﻿using GatheringTheMagic.Domain.Entities;
 using GatheringTheMagic.Domain.Enums;
 using GatheringTheMagic.Domain.Interfaces;
 using GatheringTheMagic.Infrastructure.Data;
 using GatheringTheMagic.Infrastructure.Services;
-using GatheringTheMagic.Infrastructure.Logging;
-using Xunit;
 
 public class CardPlayServiceTests
 {
