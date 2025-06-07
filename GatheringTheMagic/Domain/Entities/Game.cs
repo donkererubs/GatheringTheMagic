@@ -36,7 +36,6 @@ public class Game
 
     public Game(
         IGameLogger logger,
-        //IDeckFactory deckFactory,
         IDeckBuilder deckBuilder,
         ICardDrawService drawService,
         ITurnManager turnManager,
@@ -44,7 +43,6 @@ public class Game
         ILandPlayTracker landPlayTracker)
     {
         _logger = logger;
-        //_deckFactory = deckFactory;
         _deckBuilder = deckBuilder;
         _drawService = drawService;
         _turnManager = turnManager;
@@ -98,6 +96,7 @@ public class Game
     public bool CanPlayLand(Owner owner) => _landPlayTracker.CanPlayLand(owner);
     public void RegisterLandPlay(Owner owner) => _landPlayTracker.RegisterLandPlay(owner);
 
+    public void AdvancePhase() => _turnManager.AdvancePhase(this);
     public void NextTurn() => _turnManager.NextTurn(this);
 
 
