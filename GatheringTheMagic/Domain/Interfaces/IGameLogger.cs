@@ -1,4 +1,4 @@
-﻿namespace GatheringTheMagic.Domain.Logging;
+﻿namespace GatheringTheMagic.Domain.Interfaces;
 
 public interface IGameLogger
 {

@@ -1,18 +1,33 @@
 ﻿using System.Text.Json.Serialization;
 using GatheringTheMagic.Domain.Entities;
 using GatheringTheMagic.Domain.Enums;
-using GatheringTheMagic.Domain.Logging;
-using GatheringTheMagic.Web.Models;
+using GatheringTheMagic.Domain.Interfaces;
+using GatheringTheMagic.Infrastructure.Data;
+using GatheringTheMagic.Infrastructure.Services;
 using GatheringTheMagic.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Register Game as a singleton so its state persists across calls
-builder.Services.AddSingleton<Game>();
+builder.Services.AddSingleton<Game>(sp =>
+    new Game(
+      sp.GetRequiredService<IGameLogger>(),
+      sp.GetRequiredService<IDeckFactory>(),
+      sp.GetRequiredService<ICardDrawService>(),
+      sp.GetRequiredService<ITurnManager>(),
+      sp.GetRequiredService<ICardPlayService>(),
+      sp.GetRequiredService<ILandPlayTracker>()
+    ));
 
 // Register GameLogManager (singleton) for IGameLogger
 builder.Services.AddSingleton<IGameLogger, GameLogManager>();
+builder.Services.AddSingleton<IDeckFactory, RandomDeckFactory>();
+builder.Services.AddSingleton<ICardDrawService, CardDrawService>();
+builder.Services.AddSingleton<ITurnManager, TurnManager>();
+builder.Services.AddSingleton<ICardPlayService, CardPlayService>();
+builder.Services.AddSingleton<ILandPlayTracker, LandPlayTracker>();
+
 
 var app = builder.Build();
 
@@ -27,6 +42,7 @@ app.MapPost("/api/game", ([FromServices] Game game) =>
     var handList = game.PlayerHand.Select(ci => new
     {
         name = ci.Definition.Name,
+        types = ci.Definition.Types,
         instanceId = ci.Id  // <-- use the correct property for your CardInstance
         // imageUrl = ci.Definition.ImageUrl
     }).ToList();
@@ -58,6 +74,7 @@ app.MapPost("/api/game/draw", ([FromServices] Game game) =>
     var drawnCard = new
     {
         name = cardInstance.Definition.Name,
+        types = cardInstance.Definition.Types,
         instanceId = cardInstance.Id
         // imageUrl = cardInstance.Definition.ImageUrl
     };
@@ -107,6 +124,7 @@ app.MapPost("/api/game/play", async ([FromServices] Game game, HttpRequest req) 
     var updatedHand = game.PlayerHand.Select(ci => new
     {
         name = ci.Definition.Name,
+        types = ci.Definition.Types,
         instanceId = ci.Id
         // imageUrl = ci.Definition.ImageUrl
     }).ToList();
@@ -114,6 +132,7 @@ app.MapPost("/api/game/play", async ([FromServices] Game game, HttpRequest req) 
     var updatedBattlefield = game.PlayerBattlefield.Select(ci => new
     {
         name = ci.Definition.Name,
+        types = ci.Definition.Types,
         instanceId = ci.Id
         // imageUrl = ci.Definition.ImageUrl
     }).ToList();
