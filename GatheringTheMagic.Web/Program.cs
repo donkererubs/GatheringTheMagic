@@ -5,7 +5,7 @@ using GatheringTheMagic.Domain.Interfaces;
 using GatheringTheMagic.Infrastructure.Data;         // for SampleCards
 using GatheringTheMagic.Infrastructure.Logging;      // for GameLogManager
 using GatheringTheMagic.Infrastructure.Services;     // for all service implementations
-using GatheringTheMagic.Web.Services;
+//using GatheringTheMagic.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +17,7 @@ builder.Services
     .AddSingleton<IReadOnlyList<CardDefinition>>(_ => SampleCards.All);
 
 // 2) Core domain services
-builder.Services.AddSingleton<IGameLogger, GameLogManager>();
+//builder.Services.AddSingleton<IGameLogger, GameLogManager>();
 builder.Services.AddSingleton<IShuffleService, FisherYatesShuffleService>();
 builder.Services.AddSingleton<IDeckBuilder, DefaultDeckBuilder>();
 builder.Services.AddSingleton<ICardDrawService, CardDrawService>();

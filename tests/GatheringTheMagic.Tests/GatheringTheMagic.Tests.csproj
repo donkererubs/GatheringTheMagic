@@ -16,7 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\GatheringTheMagic\GatheringTheMagic.csproj" />
+    <ProjectReference Include="..\..\GatheringTheMagic.Domain\GatheringTheMagic.Domain.csproj" />
+    <ProjectReference Include="..\..\GatheringTheMagic.Infrastructure\GatheringTheMagic.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
