@@ -78,6 +78,38 @@ app.MapPost("/api/game/play", async ([FromServices] IGameService svc, HttpReques
 })
 .WithName("PlayCard");
 
+
+// ────────────────────────────────────────────────────────────────────────────────
+// 4) POST /api/game/phase/advance → Advance to the next phase.
+// ────────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/game/phase/advance", ([FromServices] IGameService svc) =>
+{
+    var result = svc.AdvancePhase();
+    return Results.Json(result);
+})
+.WithName("AdvancePhase");
+
+// ────────────────────────────────────────────────────────────────────────────────
+// 5) POST /api/game/turn/next → End the current player's turn.
+// ────────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/game/turn/next", ([FromServices] IGameService svc) =>
+{
+    var result = svc.NextTurn();
+    return Results.Json(result);
+})
+.WithName("NextTurn");
+
+// ────────────────────────────────────────────────────────────────────────────────
+// 6) GET /api/game/state → Get the full current game state.
+// ────────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/game/state", ([FromServices] IGameService svc) =>
+{
+    var result = svc.GetGameState();
+    return Results.Json(result);
+})
+.WithName("GetGameState");
+
+
 // Serve index.html for any other routes
 app.MapFallbackToFile("index.html");
 

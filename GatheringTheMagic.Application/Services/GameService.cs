@@ -40,6 +40,34 @@ public class GameService : IGameService
         return new PlayResultDto(hand, battlefield);
     }
 
-    private static CardDto ToDto(CardInstance ci) =>
-        new(ci.Definition.Name, ci.Definition.Types, ci.Id);
+    public GameStateDto AdvancePhase()
+    {
+        _game.AdvancePhase();
+        return BuildStateDto();
+    }
+
+    public GameStateDto NextTurn()
+    {
+        _game.NextTurn();
+        return BuildStateDto();
+    }
+
+    public GameStateDto GetGameState()
+        => BuildStateDto();
+
+    private GameStateDto BuildStateDto() => new(
+        ActivePlayer: _game.ActivePlayer.ToString(),
+        CurrentPhase: _game.CurrentPhase.ToString(),
+        PlayerDeckCount: _game.PlayerDeck.Cards.Count,
+        PlayerHand: _game.PlayerHand.Select(ToDto),
+        PlayerBattlefield: _game.PlayerBattlefield.Select(ToDto),
+        PlayerGraveyard: _game.PlayerGraveyard.Select(ToDto),
+        OpponentDeckCount: _game.OpponentDeck.Cards.Count,
+        OpponentHand: _game.OpponentHand.Select(ToDto),
+        OpponentBattlefield: _game.OpponentBattlefield.Select(ToDto),
+        OpponentGraveyard: _game.OpponentGraveyard.Select(ToDto)
+    );
+
+
+    private static CardDto ToDto(CardInstance ci) => new(ci.Definition.Name, ci.Definition.Types, ci.Id);
 }
