@@ -1,232 +1,106 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using GatheringTheMagic.Domain.Enums;
-using GatheringTheMagic.Domain.Logging;
-using GatheringTheMagic.Infrastructure.Data;
+﻿using GatheringTheMagic.Domain.Enums;
+using GatheringTheMagic.Domain.Interfaces;
 
 namespace GatheringTheMagic.Domain.Entities;
 
 public class Game
 {
     private readonly IGameLogger _logger;
+    private readonly IDeckBuilder _deckBuilder;
+    //private readonly IDeckFactory _deckFactory;
+    private readonly ICardDrawService _drawService;
+    private readonly ITurnManager _turnManager;
+    private readonly ICardPlayService _playService;
+    private readonly ILandPlayTracker _landPlayTracker;
+
 
     private static readonly Random _rng = new();
-
-    // Immutable deck‐list dictionaries...
     public IReadOnlyDictionary<CardDefinition, int> PlayerOriginalDeckList { get; }
     public IReadOnlyDictionary<CardDefinition, int> OpponentOriginalDeckList { get; }
 
-    // Active decks
-    public Deck PlayerDeck { get; private set; }
-    public Deck OpponentDeck { get; private set; }
+    public IDeck PlayerDeck { get; private set; }
+    public IDeck OpponentDeck { get; private set; }
 
-
-    // New: opening hands
     public List<CardInstance> PlayerHand { get; } = new();
     public List<CardInstance> OpponentHand { get; } = new();
 
     public List<CardInstance> PlayerBattlefield { get; } = new();
     public List<CardInstance> OpponentBattlefield { get; } = new();
 
-
-    // Track how many lands each player has played this turn
-    private readonly Dictionary<Owner, int> _landPlaysThisTurn = new()
-    {
-        { Owner.Player, 0 },
-        { Owner.Opponent, 0 }
-    };
+    public List<CardInstance> PlayerGraveyard { get; } = new();
+    public List<CardInstance> OpponentGraveyard { get; } = new();
 
     // Turn state
-    public Owner ActivePlayer { get; private set; }
-    public TurnPhase CurrentPhase { get; private set; }
+    public Owner ActivePlayer { get; set; }
+    public TurnPhase CurrentPhase { get; set; }
 
-    public Game(IGameLogger logger)
+    public Game(
+        IGameLogger logger,
+        //IDeckFactory deckFactory,
+        IDeckBuilder deckBuilder,
+        ICardDrawService drawService,
+        ITurnManager turnManager,
+        ICardPlayService playService,
+        ILandPlayTracker landPlayTracker)
     {
         _logger = logger;
+        //_deckFactory = deckFactory;
+        _deckBuilder = deckBuilder;
+        _drawService = drawService;
+        _turnManager = turnManager;
+        _playService = playService;
+        _landPlayTracker = landPlayTracker;
 
-        // Build initial state
         Reset();
     }
 
-    /// <summary>
-    /// Completely re‐initializes the game to a fresh start:
-    /// new shuffled decks, cleared hands/battlefields, opening draws,
-    /// and first player on the Untap step.
-    /// </summary>
     public void Reset()
     {
-        // 1) Build & shuffle new decks
-        PlayerDeck = GenerateRandomDeck(Owner.Player);
-        OpponentDeck = GenerateRandomDeck(Owner.Opponent);
-        PlayerDeck.Shuffle();
-        OpponentDeck.Shuffle();
+        // 1) Build & shuffle new decks via the factory
+        //PlayerDeck = _deckFactory.CreateRandomDeck(Owner.Player);
+        //OpponentDeck = _deckFactory.CreateRandomDeck(Owner.Opponent);
+        PlayerDeck = _deckBuilder.BuildDeck(Owner.Player);
+        OpponentDeck = _deckBuilder.BuildDeck(Owner.Opponent);
 
         // 2) Clear all zones
-        PlayerHand.Clear();
-        OpponentHand.Clear();
-        PlayerBattlefield.Clear();
-        OpponentBattlefield.Clear();
+        ClearAllZones();
 
         // 3) Reset per-turn counters
-        _landPlaysThisTurn[Owner.Player] = 0;
-        _landPlaysThisTurn[Owner.Opponent] = 0;
+        _landPlayTracker.Reset(Owner.Player);
+        _landPlayTracker.Reset(Owner.Opponent);
 
         // 4) Opening hands: each draws 7
-        DrawOpeningHand(Owner.Player);
-        DrawOpeningHand(Owner.Opponent);
+        _drawService.DrawOpeningHand(this, Owner.Player);
+        _drawService.DrawOpeningHand(this, Owner.Opponent);
 
         // 5) Set starting player and phase
         ActivePlayer = Owner.Player;
         CurrentPhase = TurnPhase.Untap;
+
+        _logger.Log("(Re)started game!");
     }
 
-    public void DrawOpeningHand(Owner owner)
+    public void ClearAllZones()
     {
-        for (int i = 0; i < 7; i++)
-            DrawCard(owner);
-
-        return;
+        PlayerHand.Clear();
+        OpponentHand.Clear();
+        PlayerBattlefield.Clear();
+        OpponentBattlefield.Clear();
+        PlayerGraveyard.Clear();
+        OpponentGraveyard.Clear();
     }
 
-    // Draw for whoever has priority
-    public CardInstance DrawCard()
-    {
-        return DrawCard(ActivePlayer);
-    }
+    public CardInstance DrawCard() => _drawService.DrawCard(this, ActivePlayer);
+        
+    public void PlayCard(CardInstance card) => _playService.PlayCard(this, card);
 
-    // Draw for a specific owner (useful for opening hands)
-    public CardInstance DrawCard(Owner owner)
-    {
-        var deck = owner == Owner.Player ? PlayerDeck : OpponentDeck;
-        var hand = owner == Owner.Player ? PlayerHand : OpponentHand;
+    public bool CanPlayLand() => CanPlayLand(ActivePlayer);
+    public bool CanPlayLand(Owner owner) => _landPlayTracker.CanPlayLand(owner);
+    public void RegisterLandPlay(Owner owner) => _landPlayTracker.RegisterLandPlay(owner);
 
-        var card = deck.Draw();    // removes from deck, MoveTo(Zone.Hand)
-        hand.Add(card);
-
-        if (card != null)
-        {
-            _logger.Log($"Player draws a card.");  // e.g. "Alice draws a card."
-        }
-        else
-        {
-            _logger.Log($"Player attempted to draw but library was empty.");
-        }
-
-        return card;
-    }
-
-    public void NextTurn() =>
-        ActivePlayer = ActivePlayer == Owner.Player
-            ? Owner.Opponent
-            : Owner.Player;
-
-    /// <summary>
-    /// Plays the given card instance from its owner’s hand onto the battlefield.
-    /// </summary>
-    public void PlayCard(CardInstance card)
-    {
-        if (card.Controller == Owner.Player)
-            PlayerBattlefield.Add(card);
-        else
-            OpponentBattlefield.Add(card);
-
-        // remove from hand & move zone
-        if (card.Controller == Owner.Player)
-            PlayerHand.Remove(card);
-        else
-            OpponentHand.Remove(card);
-
-        card.MoveTo(Zone.Play);
-
-        bool isLand = card.Definition.Types.HasFlag(CardType.Land);
-        if (isLand) RegisterLandPlay(ActivePlayer);
-
-        if (card != null)
-        {
-            _logger.Log($"Player plays {card.Definition?.Name ?? "a card"}.");  // e.g. "Alice draws a card."
-        }
-    }
+    public void NextTurn() => _turnManager.NextTurn(this);
 
 
-    private static Deck GenerateRandomDeck(Owner owner)
-    {
-        var deck = new Deck(owner);
-        var definitions = SampleCards.All;
-
-        // keep adding random cards until we hit exactly 60
-        while (deck.Cards.Count < Deck.MaxDeckSize)
-        {
-            var def = definitions[_rng.Next(definitions.Count)];
-            try { deck.Add(def); }
-            catch (InvalidOperationException) { /* skip duplicates or over 60 */ }
-        }
-
-        return deck;
-    }
-
-    private static IReadOnlyDictionary<CardDefinition, int> CountByDefinition(IEnumerable<CardInstance> cards)
-    {
-        return cards
-            .GroupBy(ci => ci.Definition)
-            .ToDictionary(g => g.Key, g => g.Count());
-    }
-
-    /// <summary>
-    /// Advance from the current phase into the next one, executing its domain logic.
-    /// If you just finished Cleanup, this also flips ActivePlayer and resets back to Untap.
-    /// </summary>
-    public void AdvancePhase()
-    {
-        switch (CurrentPhase)
-        {
-            case TurnPhase.Untap:
-                UntapStep(ActivePlayer);
-                CurrentPhase = TurnPhase.Upkeep;
-                break;
-
-            case TurnPhase.Upkeep:
-                UpkeepStep(ActivePlayer);
-                CurrentPhase = TurnPhase.Draw;
-                break;
-
-            case TurnPhase.Draw:
-                DrawCard(ActivePlayer);
-                CurrentPhase = TurnPhase.Main1;
-                break;
-
-            case TurnPhase.Main1:
-                // nothing automatic—UI will call PlayCard etc.
-                CurrentPhase = TurnPhase.Combat;
-                break;
-
-            case TurnPhase.Combat:
-                // domain combat resolution could go here
-                CurrentPhase = TurnPhase.Main2;
-                break;
-
-            case TurnPhase.Main2:
-                CurrentPhase = TurnPhase.End;
-                break;
-
-            case TurnPhase.End:
-                // end‐of‐turn triggers
-                CurrentPhase = TurnPhase.Cleanup;
-                break;
-
-            case TurnPhase.Cleanup:
-                CleanupStep(ActivePlayer);
-                // rotate active player
-                ActivePlayer = ActivePlayer == Owner.Player
-                               ? Owner.Opponent
-                               : Owner.Player;
-                // reset to Untap of the next player
-                CurrentPhase = TurnPhase.Untap;
-                break;
-        }
-    }
 
     /// <summary>
     /// Untap step: untap every permanent the given player controls,
@@ -234,8 +108,8 @@ public class Game
     /// </summary>
     public void UntapStep(Owner owner)
     {
-        // Reset per‐turn land plays, if you do that here:
-        _landPlaysThisTurn[owner] = 0;
+        // Reset this player’s land‐play count
+        _landPlayTracker.Reset(owner);
 
         // Choose the battlefield for this player
         var battlefield = owner == Owner.Player
@@ -252,13 +126,6 @@ public class Game
             card.Status &= ~CardStatus.SummoningSickness;
         }
     }
-
-    /// <summary>Can the given player play a land right now?</summary>
-    public bool CanPlayLand() => CanPlayLand(ActivePlayer);
-    public bool CanPlayLand(Owner owner) => _landPlaysThisTurn[owner] < 1;
-
-    /// <summary>Record that the given player has just played a land.</summary>
-    public void RegisterLandPlay(Owner owner) => _landPlaysThisTurn[owner]++;
 
     /// <summary>
     /// Upkeep step: placeholder for any upkeep triggers or effects.
@@ -286,6 +153,5 @@ public class Game
             // e.g.: card.Status &= ~CardStatus.SomeTemporaryStatus;
         }
     }
-
 
 }

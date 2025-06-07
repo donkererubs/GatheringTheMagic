@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using GatheringTheMagic.Domain.Logging;
+using GatheringTheMagic.Domain.Interfaces;
 
 namespace GatheringTheMagic.Web.Services
 {

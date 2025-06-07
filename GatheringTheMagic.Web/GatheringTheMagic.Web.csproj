@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GatheringTheMagic.Application\GatheringTheMagic.Application.csproj" />
     <ProjectReference Include="..\GatheringTheMagic\GatheringTheMagic.csproj" />
   </ItemGroup>
 

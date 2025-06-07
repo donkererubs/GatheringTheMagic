@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using GatheringTheMagic.Domain.Enums;
+using GatheringTheMagic.Domain.Interfaces;
 
 namespace GatheringTheMagic.Domain.Entities;
 
-public class Deck
+public class Deck : IDeck
 {
     public const int MaxDeckSize = 60;
     public const int MaxCopiesPerCard = 4;
