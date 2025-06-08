@@ -10,11 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// —————— Dependency Injection ——————
-
 // 1) Card pool
-builder.Services
-    .AddSingleton<IReadOnlyList<CardDefinition>>(_ => SampleCards.All);
+builder.Services.AddSingleton<IReadOnlyList<CardDefinition>>(_ => SampleCards.All);
 
 // 2) Core domain services
 builder.Services.AddSingleton<IGameLogger, GameLogger>();
@@ -34,13 +31,13 @@ builder.Services.AddSingleton<ICardPlayService, CardPlayService>();
 builder.Services.AddSingleton<ILandPlayTracker, LandPlayTracker>();
 builder.Services.AddSingleton<IChatHistoryService, InMemoryChatHistoryService>();
 
-
 // 3) Domain entry point
 builder.Services.AddSingleton<Game>();
 
 // 4) Application layer
 builder.Services.AddSingleton<IGameService, GameService>();
 builder.Services.AddSingleton<IUserConnectionManager, InMemoryUserConnectionManager>();
+builder.Services.AddSingleton<IPrivateChatHistoryService, InMemoryPrivateChatHistoryService>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
@@ -110,9 +107,6 @@ app.MapGet("/api/game/state", ([FromServices] IGameService svc) =>
 })
 .WithName("GetGameState");
 
-//app.MapHub<GameHub>("/gameHub");  // map hub endpoint :contentReference[oaicite:2]{index=2}
-
-
 // 1. (Optional) Serve default files like index.html if you want
 app.UseDefaultFiles();
 
@@ -122,8 +116,6 @@ app.UseStaticFiles();
 // 3. Your routing / SignalR
 app.UseRouting();
 app.MapHub<GameHub>("/gameHub");
-
-
 
 // Serve index.html for any other routes
 app.MapFallbackToFile("index.html");

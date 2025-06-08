@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Who's Online + Chat + Invites</title>
+    <title>Who's Online + Chat + Invites + Private</title>
     <style>
         body {
             font-family: sans-serif;
@@ -23,6 +23,7 @@
             height: 200px;
             overflow-y: auto;
             border: 1px solid #ccc;
+            border-top: none;
             padding: 0.5em;
             background: #f9f9f9;
         }
@@ -32,10 +33,40 @@
             margin: 0.25em 0;
         }
 
-            #usersList li.clickable {
+            #usersList li span {
+                margin-left: 0.5em;
                 cursor: pointer;
-                color: blue;
-                text-decoration: underline;
+            }
+
+                #usersList li span.invite {
+                    color: blue;
+                    text-decoration: underline;
+                }
+
+                #usersList li span.chat {
+                    color: green;
+                    text-decoration: underline;
+                }
+
+        #tabs {
+            margin-bottom: 0.5em;
+        }
+
+        .tab {
+            display: inline-block;
+            padding: 0.25em 0.5em;
+            margin-right: 0.5em;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            background: #f1f1f1;
+        }
+
+            .tab.selected {
+                font-weight: bold;
+                background: #fff;
+                border-bottom: 1px solid #fff;
             }
 
         .disabled {
@@ -45,7 +76,7 @@
     </style>
 </head>
 <body>
-    <h1>Who's Online + Chat + Invites</h1>
+    <h1>Who's Online + Chat + Invites + Private</h1>
 
     <!-- Join UI -->
     <div id="joinSection">
@@ -54,7 +85,7 @@
         <button id="joinBtn">Join</button>
     </div>
 
-    <!-- Welcome -->
+    <!-- Welcome + Leave -->
     <div id="welcomeSection" style="display:none; margin:1em 0;">
         <strong id="welcomeMsg"></strong>
         <button id="leaveBtn" style="margin-left:1em;">Leave Lobby</button>
@@ -62,17 +93,18 @@
 
     <hr />
 
-    <!-- Protected Panels -->
+    <!-- Locked until join -->
     <div id="container" class="disabled">
-        <!-- Users -->
+        <!-- Users Panel -->
         <section style="width: 200px;">
             <h2>Users</h2>
             <ul id="usersList"></ul>
         </section>
 
-        <!-- Chat -->
+        <!-- Chat Panel -->
         <section style="flex: 1;">
             <h2>Chat</h2>
+            <div id="tabs"></div>
             <div id="chatWindow"></div>
             <div style="margin-top:0.5em;">
                 <input id="chatInput" placeholder="Type a message…" style="width:80%;" />
@@ -81,9 +113,10 @@
         </section>
     </div>
 
-    <!-- SignalR -->
+    <!-- SignalR client -->
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
     <script>
+        // DOM refs
         const joinSection = document.getElementById('joinSection');
         const welcomeSection = document.getElementById('welcomeSection');
         const welcomeMsg = document.getElementById('welcomeMsg');
@@ -92,74 +125,141 @@
         const joinBtn = document.getElementById('joinBtn');
         const container = document.getElementById('container');
         const usersList = document.getElementById('usersList');
+        const tabsDiv = document.getElementById('tabs');
         const chatWindow = document.getElementById('chatWindow');
         const chatInput = document.getElementById('chatInput');
         const sendBtn = document.getElementById('sendBtn');
 
-        let currentUser = null, lastUsers = [], inviteStatus = {};
+        // State
+        let currentUser = null;
+        let lastUsers = [];
+        const inviteStatus = {};
+        let globalHistory = [];
+        const privateChats = {};     // { userName: [{from, message}, …] }
+        let selectedTab = 'Global';
 
-        // Disable panels
+        // Lock panels until join
         function setPanelsEnabled(on) {
             container.classList.toggle('disabled', !on);
         }
         setPanelsEnabled(false);
 
-        // build SignalR
+        // Build SignalR connection
         const connection = new signalR.HubConnectionBuilder()
             .withUrl('/gameHub')
             .build();
 
-        // 1) Render user list
+        // --- Tab & Chat Rendering ---
+        function addTab(name) {
+            if (document.querySelector(`.tab[data-name="${name}"]`)) return;
+            const btn = document.createElement('div');
+            btn.classList.add('tab');
+            btn.textContent = name;
+            btn.dataset.name = name;
+            btn.onclick = () => selectTab(name);
+            tabsDiv.appendChild(btn);
+        }
+
+        function selectTab(name) {
+            selectedTab = name;
+            document.querySelectorAll('.tab').forEach(el =>
+                el.classList.toggle('selected', el.dataset.name === name)
+            );
+            renderChatWindow();
+        }
+
+        function renderChatWindow() {
+            chatWindow.innerHTML = '';
+            const history = selectedTab === 'Global'
+                ? globalHistory
+                : (privateChats[selectedTab] || []);
+            history.forEach(m => {
+                const d = document.createElement('div');
+                d.textContent = `${m.from}: ${m.message}`;
+                chatWindow.appendChild(d);
+            });
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // --- User List Rendering ---
         function renderUserList(users) {
             usersList.innerHTML = '';
             users.forEach(u => {
                 const li = document.createElement('li');
-                let text = u + (inviteStatus[u] ? ` - ${inviteStatus[u]}` : '');
+                let txt = u + (inviteStatus[u] ? ` - ${inviteStatus[u]}` : '');
                 if (u === currentUser) {
-                    li.innerHTML = `<strong>${text}</strong>`;
-                } else if (currentUser) {
-                    li.textContent = text;
-                    li.classList.add('clickable');
-                    li.onclick = () => sendInvite(u);
+                    li.innerHTML = `<strong>${txt}</strong>`;
                 } else {
-                    li.textContent = text;
+                    li.textContent = txt;
+                    // invite link
+                    const inv = document.createElement('span');
+                    inv.textContent = '[Invite]';
+                    inv.classList.add('invite');
+                    inv.onclick = () => sendInvite(u);
+                    li.appendChild(inv);
+                    // private-chat link
+                    const pc = document.createElement('span');
+                    pc.textContent = '💬';
+                    pc.classList.add('chat');
+                    pc.onclick = () => openPrivateChat(u);
+                    li.appendChild(pc);
                 }
                 usersList.appendChild(li);
             });
         }
 
-        // 2) Add a history message
-        function appendChat(from, msg) {
-            const d = document.createElement('div');
-            d.textContent = `${from}: ${msg}`;
-            chatWindow.appendChild(d);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        // 3) Send invite
         function sendInvite(to) {
-            if (to === currentUser) return;
+            if (!currentUser || to === currentUser) return;
             inviteStatus[to] = '??';
             renderUserList(lastUsers);
             connection.invoke('RequestGame', to);
         }
 
-        // SignalR handlers
+        function openPrivateChat(withUser) {
+            if (!privateChats[withUser]) privateChats[withUser] = [];
+            addTab(withUser);
+            selectTab(withUser);
+            chatInput.focus();
+        }
+
+        // --- SignalR handlers ---
         connection.on('ReceiveUserList', users => {
             lastUsers = users.slice();
-            // prune dead invites
-            Object.keys(inviteStatus).forEach(u => { if (!users.includes(u)) delete inviteStatus[u]; });
+            Object.keys(inviteStatus).forEach(u => {
+                if (!users.includes(u)) delete inviteStatus[u];
+            });
             renderUserList(users);
         });
 
         connection.on('ReceiveMessageHistory', history => {
-            chatWindow.innerHTML = '';
-            history.forEach(m =>
-                appendChat(m.user, m.message)
-            );
+            globalHistory = history.map(m => ({ from: m.user, message: m.message }));
+            addTab('Global');
+            selectTab('Global');
         });
 
-        connection.on('ReceiveMessage', (from, msg) => appendChat(from, msg));
+        connection.on('ReceiveMessage', (from, message) => {
+            globalHistory.push({ from, message });
+            if (selectedTab === 'Global') renderChatWindow();
+        });
+
+        // **NEW**: receive private history after join
+        connection.on('ReceivePrivateMessageHistory', (withUser, history) => {
+            privateChats[withUser] = history.map(m => ({
+                from: m.user,
+                message: m.message
+            }));
+            // if already joined, show the tab
+            if (currentUser) {
+                addTab(withUser);
+                if (selectedTab === withUser) renderChatWindow();
+            }
+        });
+
+        connection.on('ReceivePrivateMessage', (from, message) => {
+            if (!privateChats[from]) privateChats[from] = [];
+            privateChats[from].push({ from, message });
+            if (selectedTab === from) renderChatWindow();
+        });
 
         connection.on('ReceiveGameRequest', from => {
             const ok = confirm(`${from} wants to play—accept?`);
@@ -171,16 +271,15 @@
                 inviteStatus[from] = 'XX';
                 renderUserList(lastUsers);
             }
-            alert(`${from} ${accepted ? 'accepted' : 'declined'} your invite.`);
+            alert(`${from} has ${accepted ? 'accepted' : 'declined'} your invite.`);
         });
 
-        // start & auto-join if we have a stored name
+        // --- Connection Start & Auto-join ---
         connection.start().then(() => {
             const stored = localStorage.getItem('playerName');
             if (stored) doJoin(stored);
         });
 
-        // do the join logic
         function doJoin(name) {
             connection.invoke('Register', name).then(() => {
                 currentUser = name;
@@ -189,11 +288,16 @@
                 welcomeMsg.textContent = `Welcome ${name}!`;
                 welcomeSection.style.display = 'block';
                 setPanelsEnabled(true);
+                // Global tab
+                addTab('Global');
+                selectTab('Global');
+                // Re-open any private tabs from history
+                Object.keys(privateChats).forEach(u => addTab(u));
                 renderUserList(lastUsers);
             });
         }
 
-        // UI events
+        // --- UI Events ---
         joinBtn.onclick = () => {
             const name = nameInput.value.trim();
             if (!/^[A-Za-z0-9]+$/.test(name)) {
@@ -208,9 +312,17 @@
         };
 
         sendBtn.onclick = () => {
-            const txt = chatInput.value.trim();
-            if (!txt) return;
-            connection.invoke('SendMessage', txt).then(() => { chatInput.value = ''; });
+            const text = chatInput.value.trim();
+            if (!text) return;
+            if (selectedTab === 'Global') {
+                connection.invoke('SendMessage', text);
+            } else {
+                // private
+                connection.invoke('SendPrivateMessage', selectedTab, text);
+                privateChats[selectedTab].push({ from: currentUser, message: text });
+            }
+            chatInput.value = '';
+            renderChatWindow();
         };
         chatInput.addEventListener('keypress', e => {
             if (e.key === 'Enter') sendBtn.click();

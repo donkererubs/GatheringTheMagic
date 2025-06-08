@@ -11,12 +11,15 @@ namespace GatheringTheMagic.Infrastructure.RealTime
         Task ReceiveGameResponse(string fromUser, bool accepted);
         Task ReceiveMessage(string fromUser, string message);
         Task ReceiveMessageHistory(Application.Services.ChatMessage[] history);
+        Task ReceivePrivateMessage(string fromUser, string message);
+        Task ReceivePrivateMessageHistory(string withUser, ChatMessage[] history);
     }
 
-    public class GameHub(IUserConnectionManager connectionManager, IChatHistoryService chatHistory) : Hub<IGameClient>
+    public class GameHub(IUserConnectionManager connectionManager, IChatHistoryService chatHistory, IPrivateChatHistoryService privateChatHistoryService) : Hub<IGameClient>
     {
         private readonly IUserConnectionManager _connectionManager = connectionManager;
         private readonly IChatHistoryService _chatHistory = chatHistory;
+        private readonly IPrivateChatHistoryService _privateChatHistoryService = privateChatHistoryService;
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
@@ -39,8 +42,25 @@ namespace GatheringTheMagic.Infrastructure.RealTime
 
         public async Task Register(string userName)
         {
+            // 1) Track the new user
             _connectionManager.AddUser(userName, Context.ConnectionId);
+
+            // 2) Broadcast updated lobby
             await Clients.All.ReceiveUserList(_connectionManager.GetAllUsers().ToArray());
+
+            // 3) Send down *private* chat histories for any existing threads
+            var partners = _privateChatHistoryService.GetChatPartners(userName);
+            foreach (var partner in partners)
+            {
+                // fetch the ordered history between these two users
+                var history = _privateChatHistoryService
+                    .GetHistory(userName, partner)
+                    .OrderBy(m => m.Timestamp)
+                    .ToArray();
+
+                // send it to the newly‐connected client
+                await Clients.Caller.ReceivePrivateMessageHistory(partner, history);
+            }
         }
 
         public async Task RequestGame(string targetUser)
@@ -70,6 +90,22 @@ namespace GatheringTheMagic.Infrastructure.RealTime
 
             // broadcast
             await Clients.All.ReceiveMessage(from, message);
+        }
+         
+        public async Task SendPrivateMessage(string targetUser, string message)
+        {
+            // determine sender & recipient
+            var fromUser = _connectionManager.GetUserByConnectionId(Context.ConnectionId);
+            var targetConn = _connectionManager.GetConnectionId(targetUser);
+            if (fromUser == null || targetConn == null) return;
+
+            // 1) Persist the message
+            var chatMsg = new ChatMessage(fromUser, message, DateTime.UtcNow);
+            _privateChatHistoryService.AddMessage(fromUser, targetUser, chatMsg);
+
+            // 2) Forward it in real time
+            await Clients.Client(targetConn)
+                .ReceivePrivateMessage(fromUser, message);
         }
     }
 }
