@@ -4,6 +4,7 @@ using GatheringTheMagic.Domain.Entities;            // for CardDefinition
 using GatheringTheMagic.Domain.Interfaces;
 using GatheringTheMagic.Infrastructure.Data;         // for SampleCards
 using GatheringTheMagic.Infrastructure.Logging;
+using GatheringTheMagic.Infrastructure.RealTime;
 using GatheringTheMagic.Infrastructure.Services;     // for all service implementations
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +17,6 @@ builder.Services
     .AddSingleton<IReadOnlyList<CardDefinition>>(_ => SampleCards.All);
 
 // 2) Core domain services
-
 builder.Services.AddSingleton<IGameLogger, GameLogger>();
 builder.Services.AddSingleton<IShuffleService, FisherYatesShuffleService>();
 builder.Services.AddSingleton<IDeckBuilder, DefaultDeckBuilder>();
@@ -32,16 +32,18 @@ builder.Services.AddSingleton<IPhaseHandler, CleanupPhaseHandler>();
 builder.Services.AddSingleton<ITurnManager, TurnManager>();
 builder.Services.AddSingleton<ICardPlayService, CardPlayService>();
 builder.Services.AddSingleton<ILandPlayTracker, LandPlayTracker>();
+builder.Services.AddSingleton<IChatHistoryService, InMemoryChatHistoryService>();
+
 
 // 3) Domain entry point
 builder.Services.AddSingleton<Game>();
 
 // 4) Application layer
 builder.Services.AddSingleton<IGameService, GameService>();
+builder.Services.AddSingleton<IUserConnectionManager, InMemoryUserConnectionManager>();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
-
-// —————— Endpoints ——————
 
 // 1) POST /api/game → Start (or reset) a new game.
 app.MapPost("/api/game", ([FromServices] IGameService svc) =>
@@ -78,7 +80,6 @@ app.MapPost("/api/game/play", async ([FromServices] IGameService svc, HttpReques
 })
 .WithName("PlayCard");
 
-
 // ────────────────────────────────────────────────────────────────────────────────
 // 4) POST /api/game/phase/advance → Advance to the next phase.
 // ────────────────────────────────────────────────────────────────────────────────
@@ -108,6 +109,20 @@ app.MapGet("/api/game/state", ([FromServices] IGameService svc) =>
     return Results.Json(result);
 })
 .WithName("GetGameState");
+
+//app.MapHub<GameHub>("/gameHub");  // map hub endpoint :contentReference[oaicite:2]{index=2}
+
+
+// 1. (Optional) Serve default files like index.html if you want
+app.UseDefaultFiles();
+
+// 2. Serve anything in wwwroot
+app.UseStaticFiles();
+
+// 3. Your routing / SignalR
+app.UseRouting();
+app.MapHub<GameHub>("/gameHub");
+
 
 
 // Serve index.html for any other routes
