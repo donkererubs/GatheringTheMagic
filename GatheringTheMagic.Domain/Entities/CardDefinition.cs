@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using GatheringTheMagic.Domain.Enums;
+﻿using GatheringTheMagic.Domain.Enums;
 
 namespace GatheringTheMagic.Domain.Entities;
 

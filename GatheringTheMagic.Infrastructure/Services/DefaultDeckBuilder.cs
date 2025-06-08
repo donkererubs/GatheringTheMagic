@@ -12,32 +12,48 @@ public class DefaultDeckBuilder : IDeckBuilder
 
     public DefaultDeckBuilder(
         IShuffleService shuffler,
-        /* here you can inject SampleCards.All or a repository */
         IReadOnlyList<CardDefinition> allDefinitions)
     {
-        _shuffler = shuffler;
-        _allDefinitions = allDefinitions;
+        _shuffler = shuffler ?? throw new ArgumentNullException(nameof(shuffler));
+        _allDefinitions = allDefinitions ?? throw new ArgumentNullException(nameof(allDefinitions));
     }
 
     public IDeck BuildDeck(Owner owner)
     {
-        // 1) Fill with legal cards
-        var deck = new Deck(owner);
-        while (deck.Cards.Count < Deck.MaxDeckSize)
+        // 1) Build the “deck list” with copy‐limits & size ≤ 60
+        var originalList = new Dictionary<CardDefinition, int>();
+        int totalCards = 0;
+
+        while (totalCards < Deck.MaxDeckSize)
         {
+            // pick a random card definition
             var def = _allDefinitions[_rng.Next(_allDefinitions.Count)];
-            try
+
+            // how many of this def do we already have?
+            originalList.TryGetValue(def, out int have);
+
+            // basic lands are unlimited in builder‐phase; others max 4
+            bool isBasicLand =
+                def.Supertypes.HasFlag(CardSupertype.Basic) &&
+                def.Types.HasFlag(CardType.Land);
+
+            if (isBasicLand || have < Deck.MaxCopiesPerCard)
             {
-                deck.Add(def);
+                originalList[def] = have + 1;
+                totalCards++;
             }
-            catch (InvalidOperationException)
-            {
-                // overflow or too many copies: skip
-            }
+            // else: skip this draw and pick again
         }
 
-        // 2) Shuffle via the pluggable algorithm
-        _shuffler.Shuffle((IList<CardInstance>)deck.Cards);
+        // 2) Create the Deck, which seeds CardInstances from originalList
+        var deck = new Deck(owner, originalList);
+
+        // 3) Shuffle via the injected algorithm (we know Cards is backed by a List<>)
+        if (deck.Cards is IList<CardInstance> list)
+            _shuffler.Shuffle(list);
+        else
+            throw new InvalidOperationException(
+                "DefaultDeckBuilder requires Deck.Cards to be IList<CardInstance>.");
 
         return deck;
     }

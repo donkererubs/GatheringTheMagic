@@ -6,11 +6,9 @@ namespace GatheringTheMagic.Domain.Interfaces;
 public interface IDeck
 {
     Owner Owner { get; }
+    IReadOnlyDictionary<CardDefinition, int> OriginalList { get; }
+    
     IReadOnlyList<CardInstance> Cards { get; }
-
-    void Add(CardDefinition definition, int quantity = 1);
-
-    void Remove(CardDefinition definition, int quantity = 1);
 
     void Shuffle();
 
