@@ -4,5 +4,5 @@ namespace GatheringTheMagic.Domain.Interfaces;
 
 public interface IDeckBuilder
 {
-    IDeck BuildDeck(Owner owner);
+    IDeck BuildRandomDeck(Owner owner);
 }

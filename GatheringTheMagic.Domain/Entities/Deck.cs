@@ -10,9 +10,6 @@ public class Deck : IDeck
     private readonly List<CardInstance> _cards = new();
     private static readonly Random _rng = Random.Shared;
     
-    public const int MaxDeckSize = 60;
-    public const int MaxCopiesPerCard = 4;
-    
     public Owner Owner { get; }
     public IReadOnlyList<CardInstance> Cards => _cards;
     public IReadOnlyDictionary<CardDefinition, int> OriginalList => new ReadOnlyDictionary<CardDefinition, int>(_originalList);

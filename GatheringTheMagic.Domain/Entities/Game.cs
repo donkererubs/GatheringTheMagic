@@ -59,8 +59,8 @@ namespace GatheringTheMagic.Domain.Entities
         public void Reset()
         {
             // 1) Build & shuffle new decks via the factory
-            PlayerDeck = _deckBuilder.BuildDeck(Owner.Player);
-            OpponentDeck = _deckBuilder.BuildDeck(Owner.Opponent);
+            PlayerDeck = _deckBuilder.BuildRandomDeck(Owner.Player);
+            OpponentDeck = _deckBuilder.BuildRandomDeck(Owner.Opponent);
 
             // 2) Clear all zones
             ClearAllZones();
