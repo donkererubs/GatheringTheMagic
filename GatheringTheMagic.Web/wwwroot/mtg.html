@@ -1,0 +1,634 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>GatheringTheMagic – Click Deck to Draw</title>
+    <style>
+        /* Reset margins/padding and force full-height */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-family: sans-serif;
+        }
+
+        /* ------------------------------
+           Opponent zone (top 35%)
+        ------------------------------ */
+        .opponent-zone {
+            flex: 0 0 35%;
+            background-color: #F08080; /* light coral */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+            .opponent-zone button {
+                padding: 0.75rem 1.5rem;
+                font-size: 1.25rem;
+                cursor: pointer;
+                border: none;
+                border-radius: 4px;
+                background-color: #ffffff;
+                color: #F08080;
+            }
+
+                .opponent-zone button:hover {
+                    background-color: #f0f0f0;
+                }
+
+        /* ------------------------------
+           Phase tracker strip (10%, min-height: 20px)
+        ------------------------------ */
+        .phase-zone {
+            flex: 0 0 10%;
+            min-height: 20px;
+            background-color: #EEE8AA; /* pale goldenrod */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .phase-zone button {
+                padding: 0.5rem 1rem;
+                font-size: 1rem;
+                cursor: pointer;
+                border: none;
+                border-radius: 4px;
+                background-color: #FFFFFF;
+                color: #8B4513; /* saddle brown */
+            }
+
+                .phase-zone button:hover {
+                    background-color: #f5f5f5;
+                }
+
+        /* ------------------------------
+           Player zone (bottom 55%)
+        ------------------------------ */
+        .player-zone {
+            flex: 0 0 55%;
+            display: flex;
+            background-color: #B0C4DE; /* light steel blue */
+        }
+        /* Left column (15% width) */
+        .left-zone {
+            flex: 0 0 15%;
+            background-color: #D3D3D3; /* light gray */
+        }
+        /* Middle column (70% width) with three equal rows */
+        .middle-zone {
+            flex: 0 0 70%;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .middle-zone .top {
+                flex: 1;
+                background-color: #90EE90; /* light green */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .middle-zone .center {
+                flex: 1;
+                background-color: #FFFFE0; /* light yellow */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .middle-zone .bottom {
+                flex: 1;
+                background-color: #FFB6C1; /* light pink */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+
+        /* Right column (15% width) with two equal rows */
+        .right-zone {
+            flex: 0 0 15%;
+            display: flex;
+            flex-direction: column;
+        }
+            /* id="deckZone" is on this .top so it fills the entire salmon area */
+            .right-zone .top {
+                flex: 1;
+                background-color: #FFA07A; /* light salmon */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                cursor: pointer; /* entire salmon cell shows pointer */
+            }
+
+            .right-zone .bottom {
+                flex: 1;
+                background-color: #87CEFA; /* light sky blue */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+
+        /* ------------------------------
+           New Inner Zones (centered)
+        ------------------------------ */
+        .hand-zone {
+            width: 80%;
+            height: 60%;
+            background-color: #FFD700; /* gold */
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            padding: 4px;
+            gap: 8px;
+            border-radius: 4px;
+            color: #000;
+        }
+
+        .graveyard-zone {
+            width: 80%;
+            height: 60%;
+            background-color: #2E8B57; /* sea green */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        /* Each card “pill” within hand-zone */
+        .card-pill {
+            background-color: #FFF;
+            border: 1px solid #999;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            color: #333;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        /* Battlefield zone styling */
+        .battlefield-zone {
+            width: 80%;
+            height: 60%;
+            background-color: #ADD8E6; /* light blue */
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            padding: 4px;
+            gap: 8px;
+            border-radius: 4px;
+            color: #000;
+            border: 2px dashed #000;
+        }
+
+        /* Each card “pill” within battlefield (reuse your .card-pill) */
+        .card-pill {
+            background-color: #FFF;
+            border: 1px solid #999;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            color: #333;
+            white-space: nowrap;
+            cursor: pointer;
+            position: relative; /* so we can position the menu relative to this if needed */
+        }
+
+        /* ────────────────────────────────────────────────────────────── */
+        /* Context menu (initially hidden) */
+        #actionMenu {
+            display: none;
+            position: absolute;
+            background-color: #FFFFFF;
+            border: 1px solid #666;
+            border-radius: 4px;
+            padding: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+            #actionMenu button {
+                display: block;
+                width: 100%;
+                padding: 6px 8px;
+                margin: 2px 0;
+                background-color: #f0f0f0;
+                border: none;
+                border-radius: 3px;
+                text-align: left;
+                cursor: pointer;
+                font-size: 0.85rem;
+            }
+
+                #actionMenu button:hover {
+                    background-color: #e0e0e0;
+                }
+    </style>
+</head>
+
+<body>
+    <!-- Opponent zone (top, 35% height) -->
+    <div class="opponent-zone">
+        <button id="startGameBtn">Start Game</button>
+    </div>
+
+    <!-- Phase tracker strip (10% height, min-20px) -->
+    <div class="phase-zone">
+        <button id="nextPhaseBtn">Next Phase</button>
+    </div>
+
+    <!-- Player zone (bottom, 55% height) -->
+    <div class="player-zone">
+        <!-- Left empty column (15%) -->
+        <div class="left-zone"></div>
+
+        <!-- Middle column (70%), split into 3 rows -->
+        <!-- Middle column .center (with battlefield) -->
+        <div class="middle-zone">
+            <div class="top">Middle Top</div>
+            <div class="center">
+                <!-- Battlefield area -->
+                <div class="battlefield-zone" id="battlefieldZone">
+                    <!-- Played cards will appear here -->
+                </div>
+
+                <!-- ────────────────────────────────────────────────────────────── -->
+                <!-- Action menu container (hidden by default) -->
+                <div id="actionMenu">
+                    <button data-action="tap">Tap</button>
+                    <button data-action="untap">Untap</button>
+                    <button data-action="graveyard">Move to Graveyard</button>
+                    <button data-action="hand">Move to Hand</button>
+                </div>
+                <!-- ────────────────────────────────────────────────────────────── -->
+
+            </div>
+            <div class="bottom">
+                <!-- Hand Zone (centered) -->
+                <div class="hand-zone" id="handZone">
+                    <!-- Cards get injected here via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column (15% width) with two equal rows -->
+        <div class="right-zone">
+            <!-- id="deckZone" is on this “top” cell so it fills the entire salmon area -->
+            <div class="top" id="deckZone">
+                <!-- “Deck: N” text will be inserted here -->
+            </div>
+            <div class="bottom">
+                <!-- Graveyard (static for now) -->
+                <div class="graveyard-zone">
+                    Graveyard
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================
+        // Client‐side JavaScript
+        // ============================
+
+        let currentGameId = null;
+        let lastClickedBattlefieldCard = null;
+        // (We’ll store the clicked card’s instance ID here so the menu‐button handlers know which card to act on.)
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // 1) Event Delegation on #handZone so any .card-pill (present now
+        //    or added later) triggers an alert.
+        // ─────────────────────────────────────────────────────────────────
+        document.getElementById("handZone").addEventListener("click", async event => {
+            const clickedPill = event.target.closest(".card-pill");
+            if (!clickedPill) return;
+
+            const cardName = clickedPill.innerText;
+            const instanceId = clickedPill.getAttribute("data-instance-id");
+
+            if (confirm(`Play ${cardName}?`)) {
+                // This is the *critical* bit: send the JSON body exactly as shown:
+                const resp = await fetch("/api/game/play", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ instanceId: instanceId })
+                });
+                if (!resp.ok) {
+                    console.error("PlayCard failed:", await resp.json());
+                    return;
+                }
+                const data = await resp.json();
+                renderHand(data.hand);
+                renderBattlefield(data.battlefield);
+            }
+        });
+
+        // ─────────────────────────────────────────────────────────────────
+        // 2) renderHand(cards) – inserts <div class="card-pill">…</div> for each card.
+        //    No per-pill listeners needed because of event delegation above.
+        // ─────────────────────────────────────────────────────────────────
+        function renderHand(cards) {
+            const handZone = document.getElementById("handZone");
+            handZone.innerHTML = ""; // clear any existing pills
+
+            cards.forEach(card => {
+                const pill = document.createElement("div");
+                pill.className = "card-pill";
+                console.log("Card:", card.instanceId, " name: ", card.name)
+                pill.setAttribute("data-instance-id", card.instanceId);
+                pill.innerText = card.types + " " + card.name
+                handZone.appendChild(pill);
+            });
+        }
+
+        //// ─────────────────────────────────────────────────────────────────
+        //// 3) renderBattlefield(cards) – unchanged
+        //// ─────────────────────────────────────────────────────────────────
+        //function renderBattlefield(cards) {
+        //    const bfZone = document.getElementById("battlefieldZone");
+        //    bfZone.innerHTML = "";
+
+        //    cards.forEach(card => {
+        //        const pill = document.createElement("div");
+        //        pill.className = "card-pill";
+        //        pill.setAttribute("data-instance-id", card.instanceId);
+        //        pill.innerText = card.name + " " + card.status;
+        //        bfZone.appendChild(pill);
+        //    });
+        //}
+
+        // ─────────────────────────────────────────────────────────────────
+        // 3) renderBattlefield(cards) – upgraded to show (U)/(T) and zZz
+        // ─────────────────────────────────────────────────────────────────
+        function renderBattlefield(cards) {
+            const bfZone = document.getElementById("battlefieldZone");
+            bfZone.innerHTML = "";
+
+            cards.forEach(card => {
+                // Determine tapped/untapped token
+                const tapToken = card.isTapped ? "(T)" : "(U)";
+                // Determine summoning sickness token (only if it has summoning sickness)
+                const sicknessToken = card.hasSummoningSickness ? " zZz" : "";
+
+                const pill = document.createElement("div");
+                pill.className = "card-pill";
+                pill.setAttribute("data-instance-id", card.instanceId);
+                // Combine name + tapToken + sicknessToken
+                pill.innerText = `${card.name} ${tapToken}${sicknessToken}`;
+
+                bfZone.appendChild(pill);
+            });
+        }
+
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // 4) playCard(cardInstanceId) – we no longer block if currentGameId is null.
+        // ─────────────────────────────────────────────────────────────────
+        async function playCard(cardInstanceId) {
+            console.log("Attempting to play card:", cardInstanceId, "with currentGameId =", currentGameId);
+            try {
+                const resp = await fetch("/api/game/play", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    // send gameId if defined, otherwise omit it entirely
+                    body: JSON.stringify(
+                        currentGameId
+                            ? { gameId: currentGameId, cardInstanceId: cardInstanceId }
+                            : { cardInstanceId: cardInstanceId }
+                    )
+                });
+                if (!resp.ok) {
+                    console.error("Failed to play card:", resp.status, await resp.text());
+                    return;
+                }
+                const data = await resp.json();
+                console.log("/api/game/play response:", data);
+
+                // Re-render hand & battlefield if returned
+                if (data.hand) renderHand(data.hand);
+                if (data.battlefield) renderBattlefield(data.battlefield);
+            } catch (err) {
+                console.error("Error calling /api/game/play:", err);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 5) “Start Game” button logic
+        // ─────────────────────────────────────────────────────────────────
+        document.getElementById("startGameBtn").addEventListener("click", async function () {
+            console.log("Start Game clicked");
+            // Hide “Start Game” so it cannot be clicked again
+            this.style.display = "none";
+
+            try {
+                const resp = await fetch("/api/game", { method: "POST" });
+                if (!resp.ok) {
+                    console.error("Failed to start game:", resp.status);
+                    return;
+                }
+                const data = await resp.json();
+                console.log("/api/game response:", data);
+
+                // If the response includes gameId or id, store it; otherwise, leave null
+                currentGameId = data.gameId ?? data.id ?? null;
+                console.log("→ Setting currentGameId =", currentGameId);
+
+                // Show deck count in the salmon cell
+                document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
+
+                // Render initial hand
+                renderHand(data.hand);
+
+                // Start with an empty battlefield
+                renderBattlefield([]);
+            } catch (err) {
+                console.error("Error calling /api/game:", err);
+            }
+        });
+
+        // ─────────────────────────────────────────────────────────────────
+        // 6) “Next Phase” button (stub)
+        // ─────────────────────────────────────────────────────────────────
+        document.getElementById("nextPhaseBtn").addEventListener("click", () => {
+            console.log("Next Phase clicked (not implemented)");
+        });
+
+        // ─────────────────────────────────────────────────────────────────
+        // 7) “Draw Card” – now we always send the draw request, regardless of currentGameId.
+        // ─────────────────────────────────────────────────────────────────
+        document.getElementById("deckZone").addEventListener("click", async () => {
+            console.log("Deck clicked; currentGameId =", currentGameId);
+
+            try {
+                const resp = await fetch("/api/game/draw", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    // send gameId if defined, otherwise omit it
+                    body: JSON.stringify(currentGameId ? { gameId: currentGameId } : {})
+                });
+                if (!resp.ok) {
+                    console.error("Failed to draw card:", resp.status);
+                    return;
+                }
+                const data = await resp.json();
+                console.log("/api/game/draw response:", data);
+
+                // Update deck count
+                document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
+
+                // If a card was drawn, append it to the hand zone
+                if (data.drawnCard !== null) {
+                    const handZone = document.getElementById("handZone");
+                    const pill = document.createElement("div");
+                    pill.className = "card-pill";
+                    pill.setAttribute("data-instance-id", data.drawnCard.instanceId);
+                    pill.innerText = data.drawnCard.name;
+                    handZone.appendChild(pill);
+                } else {
+                    console.log("No more cards to draw.");
+                }
+            } catch (err) {
+                console.error("Error calling /api/game/draw:", err);
+            }
+        });
+
+
+        const battlefieldZone = document.getElementById("battlefieldZone");
+        const actionMenu = document.getElementById("actionMenu");
+
+        battlefieldZone.addEventListener("click", event => {
+            // Find the closest .card-pill (if click was inside one)
+            const clickedPill = event.target.closest(".card-pill");
+            if (!clickedPill) {
+                // If click was outside any pill, hide the menu
+                hideActionMenu();
+                return;
+            }
+
+            // Prevent multiple menus: if user clicked same card again, toggle menu
+            const instanceId = clickedPill.getAttribute("data-instance-id");
+            if (lastClickedBattlefieldCard === clickedPill && actionMenu.style.display === "block") {
+                // Toggle off
+                hideActionMenu();
+                return;
+            }
+            lastClickedBattlefieldCard = clickedPill;
+
+            // Show the menu next to this card
+            showActionMenuForCard(clickedPill, instanceId);
+        });
+
+        // Hide menu when clicking anywhere outside of a .card-pill or outside the menu
+        document.addEventListener("click", event => {
+            const isClickInsidePill = event.target.closest(".card-pill");
+            const isClickInsideMenu = event.target.closest("#actionMenu");
+            if (!isClickInsidePill && !isClickInsideMenu) {
+                hideActionMenu();
+            }
+        });
+
+        function showActionMenuForCard(cardElement, instanceId) {
+            // Store the instance-ID so action buttons know what card to operate on
+            lastClickedBattlefieldCard = cardElement;
+            actionMenu.setAttribute("data-instance-id", instanceId);
+
+            // Compute position: place menu right below the card (or adjust if it overflows)
+            const rect = cardElement.getBoundingClientRect();
+            const parentRect = battlefieldZone.getBoundingClientRect();
+
+            // We want the menu’s top‐left to be just under the clicked card, relative to battlefieldZone.
+            const relativeX = rect.left - parentRect.left;
+            const relativeY = rect.top - parentRect.top + rect.height + 4; // 4px gap
+
+            actionMenu.style.left = `${relativeX}px`;
+            actionMenu.style.top = `${relativeY}px`;
+            actionMenu.style.display = "block";
+        }
+
+        function hideActionMenu() {
+            actionMenu.style.display = "none";
+            lastClickedBattlefieldCard = null;
+            actionMenu.removeAttribute("data-instance-id");
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 9) Wire up the menu buttons to stub functions
+        // ─────────────────────────────────────────────────────────────────
+        actionMenu.addEventListener("click", event => {
+            const btn = event.target.closest("button[data-action]");
+            if (!btn) return;
+            const action = btn.getAttribute("data-action");
+            const instanceId = actionMenu.getAttribute("data-instance-id");
+            if (!instanceId) {
+                console.error("No card instance‐ID found!");
+                return;
+            }
+
+            switch (action) {
+                case "tap":
+                    tapCard(instanceId);
+                    break;
+                case "untap":
+                    untapCard(instanceId);
+                    break;
+                case "graveyard":
+                    moveToGraveyard(instanceId);
+                    break;
+                case "hand":
+                    moveToHand(instanceId);
+                    break;
+                default:
+                    console.warn("Unknown action:", action);
+            }
+
+            // After clicking an action, hide the menu
+            hideActionMenu();
+        });
+
+        // ─────────────────────────────────────────────────────────────────
+        // 10) Stub functions (fill in your actual calls later)
+        // ─────────────────────────────────────────────────────────────────
+        function tapCard(instanceId) {
+            console.log(`tapCard called for instance ${instanceId}`);
+            // TODO: call your API or update game state to tap this card
+            // e.g. fetch("/api/game/tap", { method: "POST", body: JSON.stringify({ gameId: currentGameId, instanceId }) });
+        }
+
+        function untapCard(instanceId) {
+            console.log(`untapCard called for instance ${instanceId}`);
+            // TODO: call your API or update game state to untap this card
+        }
+
+        function moveToGraveyard(instanceId) {
+            console.log(`moveToGraveyard called for instance ${instanceId}`);
+            // TODO: call /api/game/moveToGraveyard or similar
+            // After success, you’d probably re‐render battlefield & graveyard
+        }
+
+        function moveToHand(instanceId) {
+            console.log(`moveToHand called for instance ${instanceId}`);
+            // TODO: call /api/game/moveToHand, then re‐render hand & battlefield
+        }
+
+    </script>
+</body>
+</html>
