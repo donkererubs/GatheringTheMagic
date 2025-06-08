@@ -13,6 +13,11 @@ namespace GatheringTheMagic.Infrastructure.RealTime
         Task ReceiveMessageHistory(Application.Services.ChatMessage[] history);
         Task ReceivePrivateMessage(string fromUser, string message);
         Task ReceivePrivateMessageHistory(string withUser, ChatMessage[] history);
+        // Global chat typing
+        Task ReceiveTypingIndicator(string fromUser, bool isTyping);
+
+        // Private chat typing
+        Task ReceivePrivateTypingIndicator(string fromUser, bool isTyping);
     }
 
     public class GameHub(IUserConnectionManager connectionManager, IChatHistoryService chatHistory, IPrivateChatHistoryService privateChatHistoryService) : Hub<IGameClient>
@@ -106,6 +111,24 @@ namespace GatheringTheMagic.Infrastructure.RealTime
             // 2) Forward it in real time
             await Clients.Client(targetConn)
                 .ReceivePrivateMessage(fromUser, message);
+        }
+
+        // Called by any client when they start/stop typing in the global chat
+        public async Task Typing(bool isTyping)
+        {
+            var user = _connectionManager.GetUserByConnectionId(Context.ConnectionId);
+            if (user != null)
+                await Clients.Others.ReceiveTypingIndicator(user, isTyping);
+        }
+
+        // Called by any client when they start/stop typing in a private chat tab
+        public async Task PrivateTyping(string targetUser, bool isTyping)
+        {
+            var fromUser = _connectionManager.GetUserByConnectionId(Context.ConnectionId);
+            var targetConn = _connectionManager.GetConnectionId(targetUser);
+            if (fromUser != null && targetConn != null)
+                await Clients.Client(targetConn)
+                             .ReceivePrivateTypingIndicator(fromUser, isTyping);
         }
     }
 }

@@ -107,6 +107,7 @@
             <div id="tabs"></div>
             <div id="chatWindow"></div>
             <div style="margin-top:0.5em;">
+                <div id="typingIndicator" style="font-size:0.9em; color:#666; height:1em; margin-bottom:0.25em;"></div>
                 <input id="chatInput" placeholder="Type a message…" style="width:80%;" />
                 <button id="sendBtn">Send</button>
             </div>
@@ -327,6 +328,62 @@
         chatInput.addEventListener('keypress', e => {
             if (e.key === 'Enter') sendBtn.click();
         });
+
+        //–– typing indicator state ––
+        const typingIndicator = document.getElementById('typingIndicator');
+        const globalTypingUsers = new Set();
+        const privateTypingUsers = {};    // Map: userName -> Set()
+        let typingTimeoutGlobal;
+        const typingTimeoutPrivate = {};  // Map: userName -> timeoutID
+
+        // Re-render the little status line
+        function updateTypingIndicator() {
+            if (selectedTab === 'Global') {
+                typingIndicator.textContent = globalTypingUsers.size
+                    ? [...globalTypingUsers].join(', ') + ' is typing…'
+                    : '';
+            } else {
+                const set = privateTypingUsers[selectedTab] || new Set();
+                typingIndicator.textContent = set.size
+                    ? `${selectedTab} is typing…`
+                    : '';
+            }
+        }
+
+        // Listen for local keystrokes
+        chatInput.addEventListener('input', () => {
+            if (!currentUser) return;
+
+            if (selectedTab === 'Global') {
+                connection.invoke('Typing', true);
+                clearTimeout(typingTimeoutGlobal);
+                typingTimeoutGlobal = setTimeout(() => {
+                    connection.invoke('Typing', false);
+                }, 1500);
+            } else {
+                connection.invoke('PrivateTyping', selectedTab, true);
+                clearTimeout(typingTimeoutPrivate[selectedTab]);
+                typingTimeoutPrivate[selectedTab] = setTimeout(() => {
+                    connection.invoke('PrivateTyping', selectedTab, false);
+                }, 1500);
+            }
+        });
+
+        // Remote callbacks
+        connection.on('ReceiveTypingIndicator', (fromUser, isTyping) => {
+            if (isTyping) globalTypingUsers.add(fromUser);
+            else globalTypingUsers.delete(fromUser);
+            updateTypingIndicator();
+        });
+
+        connection.on('ReceivePrivateTypingIndicator', (fromUser, isTyping) => {
+            if (!privateTypingUsers[fromUser])
+                privateTypingUsers[fromUser] = new Set();
+            if (isTyping) privateTypingUsers[fromUser].add(fromUser);
+            else privateTypingUsers[fromUser].delete(fromUser);
+            updateTypingIndicator();
+        });
+
     </script>
 </body>
 </html>
