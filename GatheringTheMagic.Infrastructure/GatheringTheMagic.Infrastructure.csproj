@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GatheringTheMagic.Application\GatheringTheMagic.Application.csproj" />
     <ProjectReference Include="..\GatheringTheMagic.Domain\GatheringTheMagic.Domain.csproj" />
+	
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.2.0" />
   </ItemGroup>
 
 </Project>
