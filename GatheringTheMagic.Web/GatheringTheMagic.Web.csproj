@@ -16,7 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\game.html">
+    <Content Update="wwwroot\index.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\mtg.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\package-lock.json">
