@@ -106,7 +106,7 @@ public class PhaseHandlerTests
         while (game.PlayerDeck.Cards.Count > 2)
         {
             var def = game.PlayerDeck.Cards[0].Definition;
-            game.PlayerDeck.Remove(def);
+            //game.PlayerDeck.Remove(def);
         }
         Assert.Equal(2, game.PlayerDeck.Cards.Count);
         Assert.Empty(game.PlayerHand);

@@ -1,11 +1,13 @@
 ﻿using System.Text.Json.Serialization;
 using GatheringTheMagic.Application.Services;
 using GatheringTheMagic.Domain.Entities;            // for CardDefinition
+using GatheringTheMagic.Domain.Enums;
 using GatheringTheMagic.Domain.Interfaces;
 using GatheringTheMagic.Infrastructure.Data;         // for SampleCards
 using GatheringTheMagic.Infrastructure.Logging;
 using GatheringTheMagic.Infrastructure.RealTime;
 using GatheringTheMagic.Infrastructure.Services;     // for all service implementations
+using GatheringTheMagic.Web.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,23 +44,18 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-// 1) POST /api/game → Start (or reset) a new game.
 app.MapPost("/api/game", ([FromServices] IGameService svc) =>
 {
     var result = svc.StartNewGame();
     return Results.Json(result);
-})
-.WithName("StartGame");
+}).WithName("StartGame");
 
-// 2) POST /api/game/draw → Draw one card.
 app.MapPost("/api/game/draw", ([FromServices] IGameService svc) =>
 {
     var result = svc.DrawCard();
     return Results.Json(result);
-})
-.WithName("DrawCard");
+}).WithName("DrawCard");
 
-// 3) POST /api/game/play → Play a card.
 app.MapPost("/api/game/play", async ([FromServices] IGameService svc, HttpRequest req) =>
 {
     var payload = await req.ReadFromJsonAsync<PlayRequest>();
@@ -74,57 +71,40 @@ app.MapPost("/api/game/play", async ([FromServices] IGameService svc, HttpReques
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-})
-.WithName("PlayCard");
+}).WithName("PlayCard");
 
-// ────────────────────────────────────────────────────────────────────────────────
-// 4) POST /api/game/phase/advance → Advance to the next phase.
-// ────────────────────────────────────────────────────────────────────────────────
-app.MapPost("/api/game/phase/advance", ([FromServices] IGameService svc) =>
+app.MapPost("/api/game/phase", ([FromBody] PhaseRequest req, IGameService gameService) =>
 {
-    var result = svc.AdvancePhase();
-    return Results.Json(result);
-})
-.WithName("AdvancePhase");
+    var newState = gameService.AdvancePhase(req.GameId);
+    return Results.Ok(newState);
+});
 
-// ────────────────────────────────────────────────────────────────────────────────
-// 5) POST /api/game/turn/next → End the current player's turn.
-// ────────────────────────────────────────────────────────────────────────────────
+//app.MapPost("/api/game/phase/advance", ([FromServices] IGameService svc) =>
+//{
+//    var result = svc.AdvancePhase();
+//    return Results.Json(result);
+//}).WithName("AdvancePhase");
+
 app.MapPost("/api/game/turn/next", ([FromServices] IGameService svc) =>
 {
     var result = svc.NextTurn();
     return Results.Json(result);
-})
-.WithName("NextTurn");
+}).WithName("NextTurn");
 
-// ────────────────────────────────────────────────────────────────────────────────
-// 6) GET /api/game/state → Get the full current game state.
-// ────────────────────────────────────────────────────────────────────────────────
 app.MapGet("/api/game/state", ([FromServices] IGameService svc) =>
 {
     var result = svc.GetGameState();
     return Results.Json(result);
-})
-.WithName("GetGameState");
+}).WithName("GetGameState");
 
-// 1. (Optional) Serve default files like index.html if you want
 app.UseDefaultFiles();
-
-// 2. Serve anything in wwwroot
 app.UseStaticFiles();
-
-// 3. Your routing / SignalR
 app.UseRouting();
 app.MapHub<GameHub>("/gameHub");
 
-// Serve index.html for any other routes
 app.MapFallbackToFile("index.html");
-
 app.Run();
 
-/// <summary>
-/// DTO for deserializing the “play” request JSON.
-/// </summary>
 public class PlayRequest
 {
     [JsonPropertyName("instanceId")]

@@ -16,38 +16,39 @@ public class TurnManager : ITurnManager
 
     public void NextTurn(Game game)
     {
+        // 1) Flip active player
         game.ActivePlayer = game.ActivePlayer == Owner.Player
             ? Owner.Opponent
             : Owner.Player;
+
+        // 2) Reset to Untap
+        game.CurrentPhase = TurnPhase.Untap;
+
+        // 3) Run Untap logic if you have a handler
+        if (_handlers.TryGetValue(TurnPhase.Untap, out var untapHandler))
+            untapHandler.Execute(game);
     }
 
     public void AdvancePhase(Game game)
     {
-        // 1) Determine next phase (wrap Cleanup → Untap)
-        var next = game.CurrentPhase == TurnPhase.Cleanup
+        var oldPhase = game.CurrentPhase;
+        var nextPhase = oldPhase == TurnPhase.Cleanup
             ? TurnPhase.Untap
-            : game.CurrentPhase + 1;
+            : oldPhase + 1;
 
-        // 2) Execute the handler if one exists
-        if (_handlers.TryGetValue(next, out var handler))
-        {
-            handler.Execute(game);
-        }
-        else
-        {
-            // No automatic logic for Main1, Combat, Main2, End
-            // We still advance phase below.
-        }
-
-        // 3) If wrapping from Cleanup, flip active player
-        if (next == TurnPhase.Untap && game.CurrentPhase == TurnPhase.Cleanup)
+        // If we’re wrapping into a new turn, flip active _before_ running Untap
+        if (oldPhase == TurnPhase.Cleanup && nextPhase == TurnPhase.Untap)
         {
             game.ActivePlayer = game.ActivePlayer == Owner.Player
                 ? Owner.Opponent
                 : Owner.Player;
         }
 
-        // 4) Finally, update the current phase
-        game.CurrentPhase = next;
+        // Update the Game’s phase
+        game.CurrentPhase = nextPhase;
+
+        // Execute any phase‐specific logic
+        if (_handlers.TryGetValue(nextPhase, out var handler))
+            handler.Execute(game);
     }
 }

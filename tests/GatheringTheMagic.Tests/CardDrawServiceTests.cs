@@ -66,12 +66,12 @@ public class CardDrawServiceTests
         while (game.PlayerDeck.Cards.Any())
         {
             var def = game.PlayerDeck.Cards[0].Definition;
-            game.PlayerDeck.Remove(def, 1);
+           // game.PlayerDeck.Remove(def, 1);
         }
         while (game.OpponentDeck.Cards.Any())
         {
             var def = game.OpponentDeck.Cards[0].Definition;
-            game.OpponentDeck.Remove(def, 1);
+           // game.OpponentDeck.Remove(def, 1);
         }
 
         return game;
@@ -87,8 +87,8 @@ public class CardDrawServiceTests
         // Put two known cards into the deck
         var def1 = SampleCards.All.First(cd => !cd.Types.HasFlag(CardType.Land));
         var def2 = SampleCards.All.First(cd => !cd.Types.HasFlag(CardType.Land) && cd != def1);
-        game.PlayerDeck.Add(def1);
-        game.PlayerDeck.Add(def2);
+        //game.PlayerDeck.Add(def1);
+        //game.PlayerDeck.Add(def2);
 
         var initialDeckCount = game.PlayerDeck.Cards.Count;
         Assert.Equal(2, initialDeckCount);
