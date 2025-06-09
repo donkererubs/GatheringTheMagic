@@ -19,6 +19,8 @@ namespace GatheringTheMagic.Domain.Entities
         private bool _playerPassed;
         private bool _opponentPassed;
 
+        public int GameId { get; set; }
+
         public IDeck PlayerDeck { get; private set; }
         public IDeck OpponentDeck { get; private set; }
 
@@ -52,6 +54,8 @@ namespace GatheringTheMagic.Domain.Entities
             _turnManager = turnManager;
             _playService = playService;
             _landPlayTracker = landPlayTracker;
+
+            GameId = 1000;
 
             Reset();
         }
@@ -93,7 +97,6 @@ namespace GatheringTheMagic.Domain.Entities
             OpponentGraveyard.Clear();
         }
 
-        // —— Existing game actions ——
         public CardInstance DrawCard() => _drawService.DrawCard(this, ActivePlayer);
         public void PlayCard(CardInstance card) => _playService.PlayCard(this, card);
 

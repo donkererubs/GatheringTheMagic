@@ -1,11 +1,13 @@
 ﻿using System.Text.Json.Serialization;
 using GatheringTheMagic.Application.Services;
 using GatheringTheMagic.Domain.Entities;            // for CardDefinition
+using GatheringTheMagic.Domain.Enums;
 using GatheringTheMagic.Domain.Interfaces;
 using GatheringTheMagic.Infrastructure.Data;         // for SampleCards
 using GatheringTheMagic.Infrastructure.Logging;
 using GatheringTheMagic.Infrastructure.RealTime;
 using GatheringTheMagic.Infrastructure.Services;     // for all service implementations
+using GatheringTheMagic.Web.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,11 +73,17 @@ app.MapPost("/api/game/play", async ([FromServices] IGameService svc, HttpReques
     }
 }).WithName("PlayCard");
 
-app.MapPost("/api/game/phase/advance", ([FromServices] IGameService svc) =>
+app.MapPost("/api/game/phase", ([FromBody] PhaseRequest req, IGameService gameService) =>
 {
-    var result = svc.AdvancePhase();
-    return Results.Json(result);
-}).WithName("AdvancePhase");
+    var newState = gameService.AdvancePhase(req.GameId);
+    return Results.Ok(newState);
+});
+
+//app.MapPost("/api/game/phase/advance", ([FromServices] IGameService svc) =>
+//{
+//    var result = svc.AdvancePhase();
+//    return Results.Json(result);
+//}).WithName("AdvancePhase");
 
 app.MapPost("/api/game/turn/next", ([FromServices] IGameService svc) =>
 {

@@ -250,14 +250,25 @@
     </div>
 
     <!-- Phase tracker strip (10% height, min-20px) -->
+    <!-- Phase tracker strip (10% height, min-20px) -->
     <div class="phase-zone">
         <button id="nextPhaseBtn">Next Phase</button>
+        <!-- list of all phases will go here -->
+        <span id="phaseList" style="margin-left:1rem; font-size:1rem;"></span>
     </div>
+
 
     <!-- Player zone (bottom, 55% height) -->
     <div class="player-zone">
-        <!-- Left empty column (15%) -->
-        <div class="left-zone"></div>
+        <!-- Left column (15% width) -->
+        <div class="left-zone">
+            <div id="turnIndicator" style="padding:1rem;font-weight:bold;">
+                Turn: —
+            </div>
+            <div id="priorityIndicator" style="padding:1rem;font-style:italic;">
+                Priority: —
+            </div>
+        </div>
 
         <!-- Middle column (70%), split into 3 rows -->
         <!-- Middle column .center (with battlefield) -->
@@ -304,19 +315,36 @@
     </div>
 
     <script>
-        // ============================
-        // Client‐side JavaScript
-        // ============================
-
         let currentGameId = null;
         let lastClickedBattlefieldCard = null;
-        // (We’ll store the clicked card’s instance ID here so the menu‐button handlers know which card to act on.)
 
+        const phases = [
+            { key: "Untap", label: "Untap" },
+            { key: "Upkeep", label: "Upkeep" },
+            { key: "Draw", label: "Draw" },
+            { key: "Main1", label: "First Main Phase" },
+            { key: "Combat", label: "Combat Phase" },
+            { key: "Main2", label: "Second Main Phase" },
+            { key: "End", label: "End Phase" },
+            { key: "Cleanup", label: "Cleanup" },
+        ];
 
-        // ─────────────────────────────────────────────────────────────────
-        // 1) Event Delegation on #handZone so any .card-pill (present now
-        //    or added later) triggers an alert.
-        // ─────────────────────────────────────────────────────────────────
+        function renderPhaseList(activePhase) {
+            const html = phases
+                .map(({ key, label }) =>
+                    key === activePhase
+                        ? `<strong>${label}</strong>`
+                        : label
+                )
+                .join(" &ndash; ");
+            document.getElementById("phaseList").innerHTML = html;
+        }
+
+        function updateTurnAndPriority(state) {
+            document.getElementById("turnIndicator").innerText = `Turn: ${state.activePlayer}`;
+            document.getElementById("priorityIndicator").innerText = `Priority: ${state.priorityHolder}`;
+        }
+
         document.getElementById("handZone").addEventListener("click", async event => {
             const clickedPill = event.target.closest(".card-pill");
             if (!clickedPill) return;
@@ -325,7 +353,6 @@
             const instanceId = clickedPill.getAttribute("data-instance-id");
 
             if (confirm(`Play ${cardName}?`)) {
-                // This is the *critical* bit: send the JSON body exactly as shown:
                 const resp = await fetch("/api/game/play", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -340,14 +367,10 @@
                 renderBattlefield(data.battlefield);
             }
         });
-
-        // ─────────────────────────────────────────────────────────────────
-        // 2) renderHand(cards) – inserts <div class="card-pill">…</div> for each card.
-        //    No per-pill listeners needed because of event delegation above.
-        // ─────────────────────────────────────────────────────────────────
+      
         function renderHand(cards) {
             const handZone = document.getElementById("handZone");
-            handZone.innerHTML = ""; // clear any existing pills
+            handZone.innerHTML = ""; 
 
             cards.forEach(card => {
                 const pill = document.createElement("div");
@@ -359,57 +382,29 @@
             });
         }
 
-        //// ─────────────────────────────────────────────────────────────────
-        //// 3) renderBattlefield(cards) – unchanged
-        //// ─────────────────────────────────────────────────────────────────
-        //function renderBattlefield(cards) {
-        //    const bfZone = document.getElementById("battlefieldZone");
-        //    bfZone.innerHTML = "";
-
-        //    cards.forEach(card => {
-        //        const pill = document.createElement("div");
-        //        pill.className = "card-pill";
-        //        pill.setAttribute("data-instance-id", card.instanceId);
-        //        pill.innerText = card.name + " " + card.status;
-        //        bfZone.appendChild(pill);
-        //    });
-        //}
-
-        // ─────────────────────────────────────────────────────────────────
-        // 3) renderBattlefield(cards) – upgraded to show (U)/(T) and zZz
-        // ─────────────────────────────────────────────────────────────────
         function renderBattlefield(cards) {
             const bfZone = document.getElementById("battlefieldZone");
             bfZone.innerHTML = "";
 
             cards.forEach(card => {
-                // Determine tapped/untapped token
                 const tapToken = card.isTapped ? "(T)" : "(U)";
-                // Determine summoning sickness token (only if it has summoning sickness)
                 const sicknessToken = card.hasSummoningSickness ? " zZz" : "";
 
                 const pill = document.createElement("div");
                 pill.className = "card-pill";
                 pill.setAttribute("data-instance-id", card.instanceId);
-                // Combine name + tapToken + sicknessToken
                 pill.innerText = `${card.name} ${tapToken}${sicknessToken}`;
 
                 bfZone.appendChild(pill);
             });
         }
 
-
-
-        // ─────────────────────────────────────────────────────────────────
-        // 4) playCard(cardInstanceId) – we no longer block if currentGameId is null.
-        // ─────────────────────────────────────────────────────────────────
         async function playCard(cardInstanceId) {
             console.log("Attempting to play card:", cardInstanceId, "with currentGameId =", currentGameId);
             try {
                 const resp = await fetch("/api/game/play", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    // send gameId if defined, otherwise omit it entirely
                     body: JSON.stringify(
                         currentGameId
                             ? { gameId: currentGameId, cardInstanceId: cardInstanceId }
@@ -423,20 +418,15 @@
                 const data = await resp.json();
                 console.log("/api/game/play response:", data);
 
-                // Re-render hand & battlefield if returned
                 if (data.hand) renderHand(data.hand);
                 if (data.battlefield) renderBattlefield(data.battlefield);
             } catch (err) {
                 console.error("Error calling /api/game/play:", err);
             }
         }
-
-        // ─────────────────────────────────────────────────────────────────
-        // 5) “Start Game” button logic
-        // ─────────────────────────────────────────────────────────────────
+       
         document.getElementById("startGameBtn").addEventListener("click", async function () {
             console.log("Start Game clicked");
-            // Hide “Start Game” so it cannot be clicked again
             this.style.display = "none";
 
             try {
@@ -448,33 +438,56 @@
                 const data = await resp.json();
                 console.log("/api/game response:", data);
 
-                // If the response includes gameId or id, store it; otherwise, leave null
                 currentGameId = data.gameId ?? data.id ?? null;
+                currentGameId = 1;
                 console.log("→ Setting currentGameId =", currentGameId);
 
-                // Show deck count in the salmon cell
                 document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
 
-                // Render initial hand
+                const stateResp = await fetch("/api/game/state");
+                if (stateResp.ok) {
+                    const state = await stateResp.json();
+                    renderPhaseList(state.currentPhase);
+                    updateTurnAndPriority(state);
+                }
+                renderPhaseList(data.currentPhaseName || data.currentPhase || "Untap");
+
                 renderHand(data.hand);
 
-                // Start with an empty battlefield
                 renderBattlefield([]);
             } catch (err) {
                 console.error("Error calling /api/game:", err);
             }
         });
 
-        // ─────────────────────────────────────────────────────────────────
-        // 6) “Next Phase” button (stub)
-        // ─────────────────────────────────────────────────────────────────
-        document.getElementById("nextPhaseBtn").addEventListener("click", () => {
-            console.log("Next Phase clicked (not implemented)");
+        document.getElementById("nextPhaseBtn").addEventListener("click", async () => {
+            if (!currentGameId) return console.warn("No game in progress");
+
+            try {
+                const resp = await fetch("/api/game/phase", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ gameId: currentGameId })
+                });
+                if (!resp.ok) {
+                    console.error("Failed to advance phase:", resp.status, await resp.text());
+                    return;
+                }
+                const data = await resp.json();
+
+                renderPhaseList(data.currentPhase);
+
+                if (data.hand) renderHand(data.hand);
+                if (data.battlefield) renderBattlefield(data.battlefield);
+                if (data.deckCount) document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
+
+                updateTurnAndPriority(data);
+            }
+            catch (err) {
+                console.error("Error advancing phase:", err);
+            }
         });
 
-        // ─────────────────────────────────────────────────────────────────
-        // 7) “Draw Card” – now we always send the draw request, regardless of currentGameId.
-        // ─────────────────────────────────────────────────────────────────
         document.getElementById("deckZone").addEventListener("click", async () => {
             console.log("Deck clicked; currentGameId =", currentGameId);
 
@@ -482,7 +495,6 @@
                 const resp = await fetch("/api/game/draw", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    // send gameId if defined, otherwise omit it
                     body: JSON.stringify(currentGameId ? { gameId: currentGameId } : {})
                 });
                 if (!resp.ok) {
@@ -492,10 +504,8 @@
                 const data = await resp.json();
                 console.log("/api/game/draw response:", data);
 
-                // Update deck count
                 document.getElementById("deckZone").innerText = `Deck: ${data.deckCount}`;
 
-                // If a card was drawn, append it to the hand zone
                 if (data.drawnCard !== null) {
                     const handZone = document.getElementById("handZone");
                     const pill = document.createElement("div");
@@ -516,28 +526,22 @@
         const actionMenu = document.getElementById("actionMenu");
 
         battlefieldZone.addEventListener("click", event => {
-            // Find the closest .card-pill (if click was inside one)
             const clickedPill = event.target.closest(".card-pill");
             if (!clickedPill) {
-                // If click was outside any pill, hide the menu
                 hideActionMenu();
                 return;
             }
 
-            // Prevent multiple menus: if user clicked same card again, toggle menu
             const instanceId = clickedPill.getAttribute("data-instance-id");
             if (lastClickedBattlefieldCard === clickedPill && actionMenu.style.display === "block") {
-                // Toggle off
                 hideActionMenu();
                 return;
             }
             lastClickedBattlefieldCard = clickedPill;
 
-            // Show the menu next to this card
             showActionMenuForCard(clickedPill, instanceId);
         });
 
-        // Hide menu when clicking anywhere outside of a .card-pill or outside the menu
         document.addEventListener("click", event => {
             const isClickInsidePill = event.target.closest(".card-pill");
             const isClickInsideMenu = event.target.closest("#actionMenu");
@@ -547,17 +551,14 @@
         });
 
         function showActionMenuForCard(cardElement, instanceId) {
-            // Store the instance-ID so action buttons know what card to operate on
             lastClickedBattlefieldCard = cardElement;
             actionMenu.setAttribute("data-instance-id", instanceId);
 
-            // Compute position: place menu right below the card (or adjust if it overflows)
             const rect = cardElement.getBoundingClientRect();
             const parentRect = battlefieldZone.getBoundingClientRect();
 
-            // We want the menu’s top‐left to be just under the clicked card, relative to battlefieldZone.
             const relativeX = rect.left - parentRect.left;
-            const relativeY = rect.top - parentRect.top + rect.height + 4; // 4px gap
+            const relativeY = rect.top - parentRect.top + rect.height + 4; 
 
             actionMenu.style.left = `${relativeX}px`;
             actionMenu.style.top = `${relativeY}px`;
@@ -570,9 +571,6 @@
             actionMenu.removeAttribute("data-instance-id");
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // 9) Wire up the menu buttons to stub functions
-        // ─────────────────────────────────────────────────────────────────
         actionMenu.addEventListener("click", event => {
             const btn = event.target.closest("button[data-action]");
             if (!btn) return;
@@ -600,13 +598,9 @@
                     console.warn("Unknown action:", action);
             }
 
-            // After clicking an action, hide the menu
             hideActionMenu();
         });
 
-        // ─────────────────────────────────────────────────────────────────
-        // 10) Stub functions (fill in your actual calls later)
-        // ─────────────────────────────────────────────────────────────────
         function tapCard(instanceId) {
             console.log(`tapCard called for instance ${instanceId}`);
             // TODO: call your API or update game state to tap this card

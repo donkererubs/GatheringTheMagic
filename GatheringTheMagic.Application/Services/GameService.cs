@@ -46,6 +46,14 @@ public class GameService : IGameService
         return BuildStateDto();
     }
 
+    public GameStateDto AdvancePhase(int gameId)
+    {
+        // If you later support multiple games, lookup by gameId here.
+        // For now, just advance our single _game.
+        _game.AdvancePhase();
+        return BuildStateDto();
+    }
+
     public GameStateDto NextTurn()
     {
         _game.NextTurn();
@@ -65,9 +73,22 @@ public class GameService : IGameService
         OpponentDeckCount: _game.OpponentDeck.Cards.Count,
         OpponentHand: _game.OpponentHand.Select(ToDto),
         OpponentBattlefield: _game.OpponentBattlefield.Select(ToDto),
-        OpponentGraveyard: _game.OpponentGraveyard.Select(ToDto)
+        OpponentGraveyard: _game.OpponentGraveyard.Select(ToDto),
+        PriorityHolder: _game.PriorityHolder.ToString()
     );
 
 
     private static CardDto ToDto(CardInstance ci) => new(ci.Definition.Name, ci.Definition.Types, ci.Id);
+
+    public Game? GetGame(Guid gameId)
+    {
+        // you only have one game in-memory today,
+        // so just ignore the id and return it:
+        return _game;
+    }
+
+    public void SaveGame(Game game)
+    {
+        // no-op: your _game instance is already mutated in-place
+    }
 }
